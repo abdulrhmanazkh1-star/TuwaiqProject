@@ -1,0 +1,205 @@
+"""LLM integration with a clearly labeled deterministic Demo Mode."""
+
+from __future__ import annotations
+
+import json
+import re
+from flask import current_app
+import requests
+
+
+def llm_configured() -> bool:
+    return bool(current_app.config.get("LLM_API_KEY"))
+
+
+def analyze_with_ai(company_a, company_b, analysis_type: str, score_payload: dict, simulate_timeout=False):
+    if simulate_timeout:
+        raise TimeoutError("Simulated AI API timeout")
+    if not llm_configured():
+        return _demo_narrative(company_a, company_b, analysis_type, score_payload), "demo_rules", 0, 0
+    system = (
+        "You are a Saudi business-partnership analyst. Use ONLY supplied facts. "
+        "Never invent financial numbers. Distinguish facts from interpretation. "
+        "Return valid JSON with keys: opportunities (list of strings), risks (list), "
+        "collaborations (list), evidence_summary (string), caveats (list). Arabic language."
+    )
+    user = json.dumps(
+        {
+            "analysis_type": analysis_type,
+            "company_a": _company_fact_card(company_a),
+            "company_b": _company_fact_card(company_b) if company_b else None,
+            "deterministic_scores": score_payload,
+            "rules": [
+                "Do not recommend buying shares from compatibility alone.",
+                "Do not promise returns.",
+                "If a field is missing, say it is unavailable.",
+            ],
+        },
+        ensure_ascii=False,
+    )
+    payload = {
+        "model": current_app.config["LLM_MODEL"],
+        "temperature": 0.2,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        "response_format": {"type": "json_object"},
+    }
+    headers = {
+        "Authorization": f"Bearer {current_app.config['LLM_API_KEY']}",
+        "Content-Type": "application/json",
+    }
+    timeout = current_app.config.get("LLM_TIMEOUT_SECONDS", 25)
+    resp = requests.post(
+        f"{current_app.config['LLM_BASE_URL']}/chat/completions",
+        headers=headers,
+        json=payload,
+        timeout=timeout,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    content = body["choices"][0]["message"]["content"]
+    usage = body.get("usage") or {}
+    parsed = _parse_json(content)
+    return parsed, "llm", int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
+
+
+def summarize_relationship(relationship, kpi_rows, milestones, alerts, simulate_timeout=False):
+    facts = {
+        "relationship": relationship.name,
+        "type": relationship.relationship_type,
+        "status": relationship.status,
+        "is_simulated": relationship.is_simulated,
+        "kpis": kpi_rows,
+        "milestones": [
+            {
+                "title": m.title,
+                "due_date": str(m.due_date),
+                "status": m.status,
+                "progress_pct": m.progress_pct,
+            }
+            for m in milestones
+        ],
+        "alerts": [a.message for a in alerts],
+    }
+    if simulate_timeout:
+        raise TimeoutError("Simulated AI API timeout")
+    if not llm_configured():
+        return _demo_monitor_summary(facts), "demo_rules", 0, 0
+    system = (
+        "Summarize partnership performance using only provided KPI facts. "
+        "Do not invent root causes. Arabic JSON with keys: on_track (bool), "
+        "underperforming (list), changes (list), delayed_milestones (list), investigate (list)."
+    )
+    payload = {
+        "model": current_app.config["LLM_MODEL"],
+        "temperature": 0.1,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": json.dumps(facts, ensure_ascii=False, default=str)},
+        ],
+        "response_format": {"type": "json_object"},
+    }
+    headers = {
+        "Authorization": f"Bearer {current_app.config['LLM_API_KEY']}",
+        "Content-Type": "application/json",
+    }
+    resp = requests.post(
+        f"{current_app.config['LLM_BASE_URL']}/chat/completions",
+        headers=headers,
+        json=payload,
+        timeout=current_app.config.get("LLM_TIMEOUT_SECONDS", 25),
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    content = body["choices"][0]["message"]["content"]
+    usage = body.get("usage") or {}
+    return _parse_json(content), "llm", int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
+
+
+def _company_fact_card(company):
+    fins = [
+        {
+            "year": f.period_year,
+            "revenue": f.revenue,
+            "net_income": f.net_income,
+            "total_assets": f.total_assets,
+            "total_liabilities": f.total_liabilities,
+            "is_synthetic": f.is_synthetic,
+        }
+        for f in sorted(company.financials, key=lambda x: x.period_year)
+    ]
+    return {
+        "name": company.official_name,
+        "symbol": company.symbol,
+        "sector": company.sector,
+        "description": company.description,
+        "products_services": company.products_services,
+        "is_synthetic": company.is_synthetic,
+        "financials": fins,
+        "sources": [{"title": s.title, "url": s.url} for s in company.sources],
+    }
+
+
+def _parse_json(content: str) -> dict:
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", content, re.S)
+        if not match:
+            raise ValueError("Malformed AI JSON")
+        return json.loads(match.group(0))
+
+
+def _demo_narrative(company_a, company_b, analysis_type, score_payload):
+    overall = score_payload.get("overall_score")
+    limitations = score_payload.get("limitations") or []
+    b_name = company_b.official_name if company_b else "—"
+    opportunities = [
+        f"تكامل محتمل بين نشاط {company_a.official_name} و{b_name} حسب القطاع المسجّل فقط.",
+        "يمكن استكشاف قنوات توزيع أو خدمات مشتركة دون افتراض إيرادات مستقبلية.",
+    ]
+    risks = [
+        "البيانات التجريبية قد لا تطابق الإفصاح الفعلي.",
+        "أي درجة توافق ليست توصية استثمارية.",
+    ]
+    if analysis_type == "equity_investment":
+        opportunities = [
+            "التقييم اتجاهي: قدرة المستثمر على النظر في الشركة المستهدفة وفق المؤشرات المتوفرة.",
+        ]
+        risks.append("لا توجد توصية بشراء أسهم؛ التقييم السوقي قد يكون غير متاح.")
+    return {
+        "opportunities": opportunities,
+        "risks": risks,
+        "collaborations": [
+            f"نوع العلاقة المقترحة للدرس: {analysis_type} بدرجة إجمالية {overall} (صيغة {score_payload.get('scoring_version')})."
+        ],
+        "evidence_summary": "النصوص مُولَّدة بقواعد حتمية من بيانات السجل المحلي، وليست استدلال نموذج لغوي حي.",
+        "caveats": limitations,
+        "demo_mode": True,
+        "facts_vs_interpretation": {
+            "facts": ["الأسماء، القطاعات، والأرقام المالية المخزّنة في قاعدة البيانات المحلية."],
+            "interpretation": ["فرص التعاون والمخاطر السردية في وضع التجربة."],
+        },
+    }
+
+
+def _demo_monitor_summary(facts):
+    under = [k["name"] for k in facts["kpis"] if k.get("status") in ("Off Track", "Needs Attention")]
+    delayed = [m["title"] for m in facts["milestones"] if m.get("status") == "delayed"]
+    on_track = not under and not delayed
+    return {
+        "on_track": on_track,
+        "underperforming": under,
+        "changes": ["المقارنة تعتمد على آخر قيمة فعلية مُدخلة لكل مؤشر."],
+        "delayed_milestones": delayed,
+        "investigate": [
+            "مراجعة سبب انحراف المؤشرات المتأخرة دون افتراض السبب الجذري.",
+            "التحقق من اكتمال إدخال البيانات قبل أي قرار إداري.",
+        ]
+        if under or delayed
+        else ["الاستمرار في الرصد الدوري."],
+        "demo_mode": True,
+        "evidence_only": True,
+    }

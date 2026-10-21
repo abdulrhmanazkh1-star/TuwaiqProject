@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}الاكتشاف الذكي{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>اكتشاف شركات مرشّحة</h2>
+  <p class="muted">يُقيَّم المرشحون من السجل المحلي فقط بنفس منطق المقارنة. الترتيب أولي وليس تغطية لتداول كاملة.</p>
+  <form class="stack" method="post">
+    <label>شركتك
+      <select name="company_a">
+        {% for c in companies %}
+        <option value="{{ c.id }}" {% if c.symbol == '7010' %}selected{% endif %}>{{ c.official_name }} — {{ c.symbol }} · {{ c.sector }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>نوع التحليل
+      <select name="analysis_type">
+        <option value="partnership">شراكة استراتيجية</option>
+        <option value="equity_investment">استثمار في الآخرين</option>
+        <option value="joint_venture">مشروع مشترك</option>
+      </select>
+    </label>
+    <button class="btn" type="submit">ترتيب المرشحين</button>
+  </form>
+</div>
+{% endblock %}

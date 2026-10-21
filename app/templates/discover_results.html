@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}نتائج الاكتشاف{% endblock %}
+{% block content %}
+<section class="hero">
+  <h2>مرشحون لـ {{ company_a.official_name }}</h2>
+  <p class="muted">النوع: {{ analysis_labels.get(analysis_type) }} · أُعيد استخدام صيغ {{ scoring_version }} · عدد المُرتَّبين من السجل المحلي فقط.</p>
+</section>
+<table>
+  <thead><tr><th>الرتبة</th><th>الشركة</th><th>الدرجة</th><th>الثقة</th><th>لماذا</th><th>قيود</th><th></th></tr></thead>
+  <tbody>
+  {% for rec, cand, payload in ranked %}
+    <tr>
+      <td>{{ rec.rank }}</td>
+      <td>{{ cand.official_name }} <span class="tag navy">{{ cand.symbol }}</span><br><small>{{ cand.sector }}</small></td>
+      <td>{{ rec.overall_score }}</td>
+      <td>{{ rec.confidence }}</td>
+      <td>{{ rec.why }}</td>
+      <td>{{ rec.limitations }}</td>
+      <td>
+        <form method="post" action="{{ url_for('main.compare') }}">
+          <input type="hidden" name="company_a" value="{{ company_a.id }}">
+          <input type="hidden" name="company_b" value="{{ cand.id }}">
+          <input type="hidden" name="analysis_type" value="{{ analysis_type }}">
+          <button class="btn secondary" type="submit">مقارنة تفصيلية</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

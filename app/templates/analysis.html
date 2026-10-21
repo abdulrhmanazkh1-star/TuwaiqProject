@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}تقرير التحليل{% endblock %}
+{% block content %}
+<section class="hero">
+  <span class="tag navy">{{ analysis_labels.get(analysis.analysis_type, analysis.analysis_type) }}</span>
+  {% if analysis.company_a.is_synthetic or (analysis.company_b and analysis.company_b.is_synthetic) %}
+  <span class="demo-tag">بيانات تجريبية</span>
+  {% endif %}
+  <h2>{{ analysis.company_a.official_name }}
+    {% if analysis.company_b %} ← {{ analysis.company_b.official_name }}{% endif %}
+  </h2>
+  <p class="muted">الحالة: {{ analysis.status }} · الوضع: {{ analysis.mode }} · زمن: {{ analysis.latency_ms }} ms · إصدار الدرجات: {{ analysis.scoring_version }}</p>
+  <p class="score-ring">{{ report.scores.overall_score if report.scores else '—' }} / 100</p>
+  <p class="muted">ثقة البيانات: {{ report.scores.confidence if report.scores else '—' }}</p>
+</section>
+<div class="grid grid-2">
+  <div class="card">
+    <h3>معايير الشفافية</h3>
+    <table>
+      <thead><tr><th>المعيار</th><th>الدرجة</th><th>الوزن</th><th>الثقة</th></tr></thead>
+      <tbody>
+      {% for s in analysis.scores %}
+        <tr>
+          <td>{{ s.criterion }}<br><small class="muted">{{ s.explanation }}</small></td>
+          <td>{{ s.score if s.score is not none else 'غير متاح' }}</td>
+          <td>{{ s.weight }}</td>
+          <td>{{ s.confidence }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3>السرد
+      {% if report.narrative and report.narrative.demo_mode %}<span class="demo-tag">وضع التجربة</span>{% endif %}
+    </h3>
+    {% set n = report.narrative or {} %}
+    <p><b>حقائق مقابل تفسير:</b></p>
+    <ul>
+      {% for f in (n.facts_vs_interpretation.facts if n.facts_vs_interpretation else []) %}<li>{{ f }}</li>{% endfor %}
+    </ul>
+    <p><b>فرص:</b></p><ul>{% for x in n.opportunities or [] %}<li>{{ x }}</li>{% endfor %}</ul>
+    <p><b>مخاطر:</b></p><ul>{% for x in n.risks or [] %}<li>{{ x }}</li>{% endfor %}</ul>
+    <p><b>ملخص الدليل:</b> {{ n.evidence_summary }}</p>
+    <p><b>قيود:</b></p>
+    <ul>{% for x in (report.scores.limitations if report.scores else []) %}<li>{{ x }}</li>{% endfor %}</ul>
+    {% if analysis.company_a and analysis.company_b %}
+    <form method="post" action="{{ url_for('main.create_partnership') }}" class="stack">
+      <input type="hidden" name="company_a" value="{{ analysis.company_a_id }}">
+      <input type="hidden" name="company_b" value="{{ analysis.company_b_id }}">
+      <input type="hidden" name="relationship_type" value="{{ analysis.analysis_type }}">
+      <input type="hidden" name="start_date" value="2026-01-01">
+      <input type="hidden" name="status" value="draft">
+      <label>اسم العلاقة <input name="name" value="علاقة من التحليل {{ analysis.id }}"></label>
+      <button class="btn secondary" type="submit">إنشاء سجل مراقبة لهذه العلاقة</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

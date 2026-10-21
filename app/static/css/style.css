@@ -1,0 +1,134 @@
+:root {
+  --navy: #0b1f3a;
+  --navy-2: #132c54;
+  --blue: #1b4f8a;
+  --blue-2: #2d6db5;
+  --gold: #c9a227;
+  --gold-2: #e0c36a;
+  --bg: #f3f6fb;
+  --card: #ffffff;
+  --text: #152238;
+  --muted: #5b6b82;
+  --line: #dbe4f0;
+  --ok: #1f8a5b;
+  --warn: #c47b12;
+  --bad: #c0392b;
+  --info: #2c6aa0;
+  --shadow: 0 12px 40px rgba(11, 31, 58, 0.08);
+  --radius: 18px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(45, 109, 181, 0.18), transparent 50%),
+    radial-gradient(900px 400px at 100% 0%, rgba(201, 162, 39, 0.12), transparent 40%),
+    var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { color: var(--navy); }
+
+.app-header {
+  background: linear-gradient(120deg, var(--navy), var(--navy-2) 55%, #163e73);
+  color: #fff;
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 8px 30px rgba(11, 31, 58, 0.25);
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo-mark {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--gold), #8d6b12);
+  display: grid; place-items: center; font-weight: 700; color: var(--navy);
+}
+.brand h1 { margin: 0; font-size: 1.05rem; }
+.brand p { margin: 0; color: #c9d7ea; font-size: 0.78rem; }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.nav a {
+  color: #e8eef7; padding: 8px 12px; border-radius: 999px; font-size: 0.86rem;
+  border: 1px solid transparent;
+}
+.nav a:hover, .nav a.active {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(224,195,106,0.45);
+  color: #fff;
+}
+.mode-pill {
+  background: rgba(201,162,39,0.15);
+  color: var(--gold-2);
+  border: 1px solid rgba(201,162,39,0.35);
+  padding: 6px 10px; border-radius: 999px; font-size: 0.75rem;
+}
+
+.container { width: min(1180px, calc(100% - 32px)); margin: 24px auto 48px; }
+.hero, .card, .panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.hero { padding: 32px; margin-bottom: 22px; overflow: hidden; position: relative; }
+.hero h2 { margin: 0 0 8px; font-size: 1.8rem; }
+.muted { color: var(--muted); }
+.grid { display: grid; gap: 16px; }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.metric, .card, .panel { padding: 18px; }
+.metric b { display: block; font-size: 1.5rem; margin-top: 6px; }
+.label { font-size: 0.8rem; color: var(--muted); }
+
+.btn {
+  border: 0; border-radius: 12px; padding: 10px 16px; cursor: pointer;
+  background: var(--blue); color: #fff; font-weight: 600;
+  font-family: inherit;
+}
+.btn.secondary { background: #e8eef7; color: var(--navy); }
+.btn.gold { background: var(--gold); color: var(--navy); }
+.btn.danger { background: var(--bad); }
+.btn:hover { filter: brightness(1.05); }
+
+form.stack { display: grid; gap: 12px; }
+label { font-size: 0.9rem; font-weight: 600; }
+select, input, textarea {
+  width: 100%; padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--line); font-family: inherit; font-size: 0.95rem;
+  background: #fff;
+}
+.banner {
+  padding: 10px 14px; border-radius: 12px; margin-bottom: 14px;
+}
+.banner.ok { background: #e8f7ef; color: var(--ok); }
+.banner.err { background: #fdecea; color: var(--bad); }
+.demo-tag, .tag {
+  display: inline-block; padding: 3px 8px; border-radius: 999px;
+  font-size: 0.72rem; background: #fff6d9; color: #7a5b00; font-weight: 700;
+}
+.tag.navy { background: #e8eef7; color: var(--navy); }
+.tag.bad { background: #fdecea; color: var(--bad); }
+.tag.warn { background: #fff3e0; color: var(--warn); }
+.tag.ok { background: #e8f7ef; color: var(--ok); }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; }
+
+.score-ring { font-size: 2rem; font-weight: 800; color: var(--navy); }
+.footer {
+  text-align: center; color: var(--muted); font-size: 0.8rem; padding: 24px;
+}
+
+@media (max-width: 800px) {
+  .app-header { flex-direction: column; align-items: stretch; }
+  .hero h2 { font-size: 1.35rem; }
+}

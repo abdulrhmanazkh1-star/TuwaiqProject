@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}التقارير{% endblock %}
+{% block content %}
+<div class="grid grid-2">
+  <div class="card">
+    <h2>تحليلات محفوظة</h2>
+    <table>
+      <thead><tr><th>الوقت</th><th>النوع</th><th>أ</th><th>ب</th><th>وضع</th><th></th></tr></thead>
+      <tbody>
+      {% for a in analyses %}
+        <tr>
+          <td>{{ a.created_at }}</td>
+          <td>{{ analysis_labels.get(a.analysis_type, a.analysis_type) }}</td>
+          <td>{{ a.company_a.official_name if a.company_a else '—' }}</td>
+          <td>{{ a.company_b.official_name if a.company_b else 'اكتشاف' }}</td>
+          <td>{{ a.mode }} / {{ a.status }}</td>
+          <td><a href="{{ url_for('main.analysis_detail', analysis_id=a.id) }}">عرض</a>
+              · <a href="{{ url_for('main.analysis_json', analysis_id=a.id) }}">JSON</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>وثائق التسليم</h2>
+    <ul>
+      <li>README.md — تشغيل محلي</li>
+      <li>docs/REPORT.md — التقرير التقني</li>
+      <li>docs/PITCH.md — عرض 3 دقائق</li>
+      <li>docs/QNA.md — أسئلة النقاش</li>
+      <li>docs/DIAGRAMS.md — مسار التطوير والمراقبة</li>
+      <li>docs/AI_EVALUATION.md — تقييم الشروحات</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

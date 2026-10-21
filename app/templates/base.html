@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CompatibilityMatch AI{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo-mark">CM</div>
+      <div>
+        <h1>CompatibilityMatch AI</h1>
+        <p>ذكاء الشراكات والاستثمار — أسماء الشركات ورموزها من تداول السعودية</p>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('main.home') }}">الرئيسية</a>
+      <a href="{{ url_for('main.compare') }}">مقارنة الشركات</a>
+      <a href="{{ url_for('main.discover') }}">الاكتشاف الذكي</a>
+      <a href="{{ url_for('main.investment') }}">تحليل الاستثمار</a>
+      <a href="{{ url_for('main.partnerships') }}">مراقبة الشراكات</a>
+      <a href="{{ url_for('main.system_monitor') }}">مراقبة النظام</a>
+      <a href="{{ url_for('main.reports') }}">التقارير</a>
+    </nav>
+    <span class="mode-pill">
+      {% if llm_mode == 'llm' %}وضع النموذج اللغوي متصل{% else %}وضع التجربة — قواعد حتمية (ليس استدلال AI حي){% endif %}
+    </span>
+  </header>
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="banner {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <div class="footer">CompatibilityMatch AI — مشروع جامعي لمادة تطوير ومراقبة منتج الذكاء الاصطناعي. ليس استشارة استثمارية.</div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}تحليل الاستثمار{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>تحليل استثمار حقوق ملكية — اتجاهي</h2>
+  <p class="muted">الشركة أ = المستثمر المحتمل. الشركة ب = المستهدفة. الاتجاه لا يُعكس تلقائياً. لا توصية بشراء أسهم من التوافق وحده.</p>
+  <form class="stack" method="post">
+    <label>المستثمر (أ)
+      <select name="company_a">{% for c in companies %}<option value="{{ c.id }}">{{ c.official_name }}</option>{% endfor %}</select>
+    </label>
+    <label>الشركة المستهدفة (ب)
+      <select name="company_b">{% for c in companies %}<option value="{{ c.id }}" {% if loop.index0 == 7 %}selected{% endif %}>{{ c.official_name }}</option>{% endfor %}</select>
+    </label>
+    <button class="btn gold" type="submit">تحليل الاستثمار</button>
+  </form>
+</div>
+{% endblock %}

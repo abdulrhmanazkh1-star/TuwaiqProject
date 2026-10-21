@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}الرئيسية — CompatibilityMatch AI{% endblock %}
+{% block content %}
+<section class="hero">
+  <span class="demo-tag">MVP أكاديمي</span>
+  <h2>اكتشف الشريك أو الاستثمار، ثم راقب هل العلاقة تحقق أهدافها.</h2>
+  <p class="muted">المنصة تغطي دورة: اكتشاف → تحليل → تقييم → قرار → مراقبة → تحسين. الدرجات رقمية من صيغ بايثون موثّقة ({{ scoring_version }}). السرد بالذكاء الاصطناعي أو وضع التجربة المُعلَّم.</p>
+  <p class="muted">السجل يحتوي {{ companies|length }} شركة مساهمة مدرجة في السوق الرئيسية، مع أسماء ورموز مرجعية من دليل تداول السعودية. أوصاف الأنشطة مختصرة، والبيانات المالية غير مستوردة.</p>
+</section>
+<div class="grid grid-3">
+  <div class="metric"><div class="label">طلبات تحليل/أحداث مرصودة</div><b>{{ metrics.total }}</b></div>
+  <div class="metric"><div class="label">نسبة الأخطاء التقنية</div><b>{{ metrics.error_rate }}%</b></div>
+  <div class="metric"><div class="label">متوسط زمن الاستجابة</div><b>{{ metrics.avg_latency_ms }} ms</b></div>
+</div>
+<div class="grid grid-2" style="margin-top:16px">
+  <div class="card">
+    <h3>سيناريوهات العرض</h3>
+    <ol>
+      <li>اكتشاف شريك استراتيجي من شركات الاتصالات والطاقة والبتروكيماويات والمصارف المدرجة.</li>
+      <li>فتح مقارنة تفصيلية ومراجعة الفرص والمخاطر.</li>
+      <li>مراقبة شراكة موقّعة مُحاكاة وإيراد 650 ألف مقابل هدف مليون.</li>
+      <li>لوحة مراقبة النظام ومحاكاة انتهاء مهلة API.</li>
+    </ol>
+    <a class="btn" href="{{ url_for('main.discover') }}">ابدأ الاكتشاف</a>
+    <a class="btn secondary" href="{{ url_for('main.partnerships') }}">مراقبة الشراكات</a>
+  </div>
+  <div class="card">
+    <h3>حدود المنتج</h3>
+    <ul>
+      <li>لا يَعد بعوائد مستقبلية ولا يستبدل المشورة المهنية.</li>
+      <li>مؤشرات تنفيذ الشراكة تُدخل يدوياً أو عبر CSV لأن الإفصاح العام لا يكشف تفاصيل العقود الخاصة.</li>
+      <li>سجل الشركات وأرقامها حقيقية، بينما علاقة الشراكة وبيانات أدائها في المثال مُحاكاة.</li>
+      <li>المقارنة المالية لا تتوفر حتى استيراد قوائم مالية موثقة؛ لا تُعرض أرقام مالية مخمّنة.</li>
+    </ul>
+  </div>
+</div>
+<section class="card" style="margin-top:16px">
+  <h3>الشركات المدرجة في نسخة العرض</h3>
+  <p class="muted">الرموز وأسماء الجهات من <a href="https://www.saudiexchange.sa/wps/portal/saudiexchange/trading/participants-directory/issuer-directory?locale=en" target="_blank" rel="noopener">دليل المُصدرين في تداول السعودية</a>. التصنيف القطاعي والوصف مختصران لأغراض المقارنة الأولية.</p>
+  <table>
+    <thead><tr><th>الرمز</th><th>الشركة</th><th>القطاع</th><th>النشاط المختصر</th><th>المصدر</th></tr></thead>
+    <tbody>
+    {% for c in companies %}
+      <tr>
+        <td><b>{{ c.symbol }}</b></td>
+        <td>{{ c.official_name }}<br><small class="muted">{{ c.official_name_en }}</small></td>
+        <td>{{ c.sector }}<br><small class="muted">{{ c.subsector }}</small></td>
+        <td>{{ c.products_services }}</td>
+        <td><a href="{{ c.source_url }}" target="_blank" rel="noopener">تداول</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

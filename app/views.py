@@ -1,0 +1,504 @@
+from __future__ import annotations
+
+import csv
+import io
+import json
+import time
+from datetime import datetime
+
+from flask import (
+    Blueprint,
+    Response,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.ai_engine import analyze_with_ai, llm_configured, summarize_relationship
+from app.kpis import add_actual, evaluate_target, investment_return_summary, refresh_alerts
+from app.models import (
+    Analysis,
+    BusinessRelationship,
+    Company,
+    CompatibilityScore,
+    KPITarget,
+    Milestone,
+    Recommendation,
+    db,
+)
+from app.monitoring import dashboard_metrics, record_event
+from app.scoring import SCORING_VERSION, analyze_pair
+
+bp = Blueprint("main", __name__)
+
+ANALYSIS_LABELS = {
+    "partnership": "شراكة استراتيجية",
+    "equity_investment": "استثمار حقوق ملكية",
+    "joint_venture": "مشروع مشترك",
+}
+
+
+@bp.app_context_processor
+def inject_globals():
+    return {
+        "llm_mode": "llm" if llm_configured() else "demo",
+        "analysis_labels": ANALYSIS_LABELS,
+        "scoring_version": SCORING_VERSION,
+    }
+
+
+@bp.route("/")
+def home():
+    companies = Company.query.order_by(Company.sector, Company.official_name).all()
+    rels = BusinessRelationship.query.order_by(BusinessRelationship.created_at.desc()).all()
+    metrics = dashboard_metrics()
+    return render_template("home.html", companies=companies, relationships=rels, metrics=metrics)
+
+
+@bp.route("/compare", methods=["GET", "POST"])
+def compare():
+    companies = Company.query.order_by(Company.official_name).all()
+    if request.method == "POST":
+        a_id = request.form.get("company_a")
+        b_id = request.form.get("company_b")
+        analysis_type = request.form.get("analysis_type", "partnership")
+        simulate = request.form.get("simulate")
+        return _run_comparison(a_id, b_id, analysis_type, simulate)
+    return render_template("compare.html", companies=companies)
+
+
+@bp.route("/analysis/<int:analysis_id>")
+def analysis_detail(analysis_id):
+    analysis = Analysis.query.get_or_404(analysis_id)
+    report = json.loads(analysis.report_json or "{}")
+    return render_template("analysis.html", analysis=analysis, report=report)
+
+
+@bp.route("/discover", methods=["GET", "POST"])
+def discover():
+    companies = Company.query.order_by(Company.official_name).all()
+    if request.method == "POST":
+        a_id = request.form.get("company_a")
+        analysis_type = request.form.get("analysis_type", "partnership")
+        return _run_discovery(a_id, analysis_type)
+    return render_template("discover.html", companies=companies)
+
+
+@bp.route("/investment", methods=["GET", "POST"])
+def investment():
+    companies = Company.query.order_by(Company.official_name).all()
+    if request.method == "POST":
+        return _run_comparison(
+            request.form.get("company_a"),
+            request.form.get("company_b"),
+            "equity_investment",
+            request.form.get("simulate"),
+        )
+    return render_template("investment.html", companies=companies)
+
+
+@bp.route("/partnerships")
+def partnerships():
+    rels = BusinessRelationship.query.order_by(BusinessRelationship.created_at.desc()).all()
+    companies = Company.query.order_by(Company.official_name).all()
+    return render_template("partnerships.html", relationships=rels, companies=companies)
+
+
+@bp.route("/partnerships/create", methods=["POST"])
+def create_partnership():
+    try:
+        status = request.form.get("status", "draft")
+        if status not in ("draft", "approved", "signed"):
+            status = "draft"
+        rel = BusinessRelationship(
+            name=request.form.get("name") or "علاقة بدون اسم",
+            company_a_id=int(request.form["company_a"]),
+            company_b_id=int(request.form["company_b"]),
+            relationship_type=request.form.get("relationship_type", "partnership"),
+            start_date=datetime.strptime(request.form["start_date"], "%Y-%m-%d").date(),
+            planned_end_date=(
+                datetime.strptime(request.form["planned_end_date"], "%Y-%m-%d").date()
+                if request.form.get("planned_end_date")
+                else None
+            ),
+            status=status,
+            initial_budget=float(request.form["initial_budget"]) if request.form.get("initial_budget") else None,
+            reporting_frequency=request.form.get("reporting_frequency", "monthly"),
+            is_simulated=request.form.get("is_simulated") == "1",
+            notes=request.form.get("notes"),
+        )
+        db.session.add(rel)
+        db.session.flush()
+        from app.models import RelationshipObjective
+        if request.form.get("objective"):
+            db.session.add(
+                RelationshipObjective(
+                    relationship_id=rel.id,
+                    title=request.form.get("objective"),
+                    description=request.form.get("operational_target"),
+                    category="operational",
+                )
+            )
+        if request.form.get("financial_target"):
+            db.session.add(RelationshipObjective(
+                relationship_id=rel.id,
+                title=request.form.get("financial_target"),
+                description="هدف مالي أدخله المستخدم.",
+                category="financial",
+            ))
+        _add_default_kpis(rel)
+        if request.form.get("kpi_name"):
+            if not request.form.get("kpi_target"):
+                raise ValueError("أدخل قيمة مستهدفة للمؤشر المخصص")
+            custom_target = KPITarget(
+                relationship_id=rel.id,
+                name=request.form["kpi_name"].strip()[:128],
+                target_value=float(request.form["kpi_target"]),
+                unit=(request.form.get("kpi_unit") or "SAR").strip()[:32],
+                direction=request.form.get("kpi_direction", "higher_better"),
+            )
+            if custom_target.target_value < 0:
+                raise ValueError("يجب أن يكون مستهدف المؤشر صفراً أو أكبر")
+            if custom_target.direction not in ("higher_better", "lower_better", "range"):
+                raise ValueError("اتجاه المؤشر غير صالح")
+            if custom_target.direction == "range":
+                custom_target.range_min = float(request.form["range_min"])
+                custom_target.range_max = float(request.form["range_max"])
+                if custom_target.range_min > custom_target.range_max:
+                    raise ValueError("الحد الأدنى يجب ألا يتجاوز الحد الأعلى")
+            db.session.add(custom_target)
+        if request.form.get("milestone_title") and request.form.get("milestone_due"):
+            db.session.add(Milestone(
+                relationship_id=rel.id,
+                title=request.form["milestone_title"].strip()[:255],
+                due_date=datetime.strptime(request.form["milestone_due"], "%Y-%m-%d").date(),
+                progress_pct=0,
+            ))
+        db.session.commit()
+        refresh_alerts(rel)
+        flash("تم إنشاء سجل المراقبة. فعّل الحالة إلى معتمد/موقع قبل اعتبار العلاقة نشطة تشغيلياً.", "ok")
+        return redirect(url_for("main.partnership_detail", rel_id=rel.id))
+    except Exception as exc:
+        db.session.rollback()
+        record_event("validation_failure", False, error_code="relationship_create", details=str(exc))
+        flash("تعذر إنشاء العلاقة. تحقق من الحقول.", "err")
+        return redirect(url_for("main.partnerships"))
+
+
+@bp.route("/partnerships/<int:rel_id>", methods=["GET", "POST"])
+def partnership_detail(rel_id):
+    rel = BusinessRelationship.query.get_or_404(rel_id)
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "add_kpi_actual":
+            try:
+                target = KPITarget.query.get_or_404(int(request.form["target_id"]))
+                add_actual(target, request.form["period"], request.form["actual_value"], "manual")
+                refresh_alerts(rel)
+                record_event("kpi_update", True, latency_ms=5, details=f"target={target.id}")
+                flash("تم حفظ القيمة الفعلية.", "ok")
+            except ValueError as exc:
+                record_event("kpi_update_failure", False, error_code="invalid_kpi", details=str(exc))
+                flash(str(exc), "err")
+        elif action == "csv_import":
+            _import_kpi_csv(rel, request.files.get("csv_file"))
+        elif action == "add_milestone":
+            ms = Milestone(
+                relationship_id=rel.id,
+                title=request.form.get("title") or "معلم",
+                due_date=datetime.strptime(request.form["due_date"], "%Y-%m-%d").date(),
+                progress_pct=float(request.form.get("progress_pct") or 0),
+            )
+            db.session.add(ms)
+            db.session.commit()
+            refresh_alerts(rel)
+        elif action == "complete_milestone":
+            ms = Milestone.query.get_or_404(int(request.form["milestone_id"]))
+            ms.completed_at = datetime.utcnow().date()
+            ms.progress_pct = 100
+            ms.status = "completed"
+            db.session.commit()
+            refresh_alerts(rel)
+        elif action == "ai_summary":
+            return _relationship_ai_summary(rel, request.form.get("simulate") == "timeout")
+        return redirect(url_for("main.partnership_detail", rel_id=rel.id))
+
+    kpi_rows = [evaluate_target(t) for t in rel.kpi_targets]
+    investment_summary = investment_return_summary(rel)
+    summary = None
+    if request.args.get("summary"):
+        try:
+            summary = json.loads(request.args.get("summary_json") or "{}")
+        except json.JSONDecodeError:
+            summary = None
+    return render_template("partnership_detail.html", rel=rel, kpi_rows=kpi_rows, summary=summary, investment_summary=investment_summary)
+
+
+@bp.route("/system")
+def system_monitor():
+    metrics = dashboard_metrics()
+    return render_template("system.html", metrics=metrics)
+
+
+@bp.route("/system/simulate", methods=["POST"])
+def simulate():
+    kind = request.form.get("kind")
+    if kind == "ai_timeout":
+        companies = Company.query.limit(2).all()
+        _run_comparison(str(companies[0].id), str(companies[1].id), "partnership", "timeout")
+        flash("تم محاكاة انتهاء مهلة واجهة الذكاء الاصطناعي.", "ok")
+        return redirect(url_for("main.system_monitor"))
+    if kind == "missing_company":
+        record_event("validation_failure", False, error_code="missing_company", details="simulated")
+        flash("سُجّل فشل تحقق: شركة ناقصة.", "ok")
+        return redirect(url_for("main.system_monitor"))
+    if kind == "invalid_kpi":
+        record_event("kpi_update_failure", False, error_code="invalid_kpi", details="simulated non-numeric")
+        flash("سُجّل فشل تحديث مؤشر.", "ok")
+        return redirect(url_for("main.system_monitor"))
+    if kind == "delayed_analysis":
+        t0 = time.time()
+        time.sleep(1.2)
+        record_event("ai_analysis", True, latency_ms=int((time.time() - t0) * 1000), details="simulated delay")
+        flash("سُجّل تحليل متأخر لأغراض المراقبة.", "ok")
+        return redirect(url_for("main.system_monitor"))
+    return redirect(url_for("main.system_monitor"))
+
+
+@bp.route("/reports")
+def reports():
+    analyses = Analysis.query.order_by(Analysis.created_at.desc()).limit(20).all()
+    rels = BusinessRelationship.query.all()
+    return render_template("reports.html", analyses=analyses, relationships=rels)
+
+
+@bp.route("/reports/analysis/<int:analysis_id>.json")
+def analysis_json(analysis_id):
+    analysis = Analysis.query.get_or_404(analysis_id)
+    return Response(analysis.report_json or "{}", mimetype="application/json")
+
+
+def _run_comparison(a_id, b_id, analysis_type, simulate=None):
+    t0 = time.time()
+    try:
+        if not a_id or not b_id or a_id == b_id:
+            record_event("validation_failure", False, error_code="invalid_pair", details="same or missing company")
+            flash("اختر شركتين مختلفتين.", "err")
+            return redirect(url_for("main.compare"))
+        company_a = Company.query.get(int(a_id))
+        company_b = Company.query.get(int(b_id))
+        if not company_a or not company_b:
+            record_event("validation_failure", False, error_code="missing_company", details=f"{a_id},{b_id}")
+            flash("بيانات الشركة غير موجودة في السجل المحلي.", "err")
+            return redirect(url_for("main.compare"))
+        score_payload = analyze_pair(company_a, company_b, analysis_type)
+        narrative, mode, tok_in, tok_out = analyze_with_ai(
+            company_a, company_b, analysis_type, score_payload, simulate_timeout=(simulate == "timeout")
+        )
+        latency = int((time.time() - t0) * 1000)
+        report = {
+            "scores": score_payload,
+            "narrative": narrative,
+            "facts_only_financials": True,
+            "generated_at": datetime.utcnow().isoformat() + "Z",
+        }
+        analysis = Analysis(
+            company_a_id=company_a.id,
+            company_b_id=company_b.id,
+            analysis_type=analysis_type,
+            direction="a_to_b",
+            status="completed",
+            scoring_version=SCORING_VERSION,
+            mode=mode,
+            latency_ms=latency,
+            report_json=json.dumps(report, ensure_ascii=False),
+        )
+        db.session.add(analysis)
+        db.session.flush()
+        for c in score_payload["criteria"]:
+            db.session.add(
+                CompatibilityScore(
+                    analysis_id=analysis.id,
+                    criterion=c["criterion"],
+                    score=c["score"],
+                    weight=c["weight"],
+                    confidence=c["confidence"],
+                    explanation=c["explanation"],
+                    evidence=c.get("evidence"),
+                )
+            )
+        db.session.commit()
+        record_event(
+            "ai_analysis",
+            True,
+            latency_ms=latency,
+            tokens_in=tok_in,
+            tokens_out=tok_out,
+            details=f"analysis_id={analysis.id};mode={mode}",
+        )
+        return redirect(url_for("main.analysis_detail", analysis_id=analysis.id))
+    except Exception as exc:
+        db.session.rollback()
+        latency = int((time.time() - t0) * 1000)
+        error_code = "timeout" if isinstance(exc, TimeoutError) or "timeout" in str(exc).lower() else "ai_error"
+        failed = Analysis(
+            company_a_id=int(a_id) if a_id else 1,
+            company_b_id=int(b_id) if b_id else None,
+            analysis_type=analysis_type,
+            status="failed",
+            scoring_version=SCORING_VERSION,
+            mode="error",
+            latency_ms=latency,
+            error_message=str(exc)[:500],
+            report_json="{}",
+        )
+        try:
+            db.session.add(failed)
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+        record_event("ai_analysis", False, latency_ms=latency, error_code=error_code, details=str(exc)[:400])
+        flash(f"فشل التحليل: {exc}", "err")
+        return redirect(url_for("main.compare"))
+
+
+def _run_discovery(a_id, analysis_type):
+    t0 = time.time()
+    company_a = Company.query.get(int(a_id)) if a_id else None
+    if not company_a:
+        record_event("validation_failure", False, error_code="missing_company", details="discovery")
+        flash("اختر شركة من السجل المحلي.", "err")
+        return redirect(url_for("main.discover"))
+    candidates = Company.query.filter(Company.id != company_a.id).all()
+    ranked = []
+    for cand in candidates:
+        payload = analyze_pair(company_a, cand, analysis_type)
+        ranked.append((payload.get("overall_score") or 0, payload.get("confidence") or 0, cand, payload))
+    ranked.sort(key=lambda x: x[0], reverse=True)
+    top = ranked[:5]
+    latency = int((time.time() - t0) * 1000)
+    analysis = Analysis(
+        company_a_id=company_a.id,
+        company_b_id=None,
+        analysis_type=analysis_type,
+        status="completed",
+        scoring_version=SCORING_VERSION,
+        mode="demo_rules" if not llm_configured() else "hybrid",
+        latency_ms=latency,
+        report_json=json.dumps({"discovery": True, "count_ranked": len(ranked)}, ensure_ascii=False),
+    )
+    db.session.add(analysis)
+    db.session.flush()
+    recs = []
+    for i, (score, conf, cand, payload) in enumerate(top, start=1):
+        why = next((c["explanation"] for c in payload["criteria"] if c["score"]), "تكامل أولي من الصيغ الموثّقة.")
+        risks = "؛ ".join(payload.get("limitations") or [])
+        rec = Recommendation(
+            analysis_id=analysis.id,
+            candidate_company_id=cand.id,
+            rank=i,
+            overall_score=score,
+            confidence=conf,
+            why=why,
+            risks=risks,
+            limitations="الترتيب داخل السجل المحلي المُتحقق فقط، وليس كل شركات تداول.",
+        )
+        db.session.add(rec)
+        recs.append((rec, cand, payload))
+    db.session.commit()
+    record_event("discovery", True, latency_ms=latency, details=f"analysis_id={analysis.id}")
+    return render_template(
+        "discover_results.html",
+        company_a=company_a,
+        analysis=analysis,
+        ranked=recs,
+        analysis_type=analysis_type,
+    )
+
+
+def _add_default_kpis(rel):
+    if rel.relationship_type == "equity_investment":
+        items = [
+            ("أساس تكلفة الاستثمار", "SAR", 0, "higher_better"),
+            ("القيمة الحالية للاستثمار", "SAR", 0, "higher_better"),
+            ("توزيعات مستلمة", "SAR", 0, "higher_better"),
+            ("حصيلة تخارج محققة", "SAR", 0, "higher_better"),
+        ]
+    elif rel.relationship_type == "joint_venture":
+        items = [
+            ("إنجاز المعالم", "pct", 100, "higher_better"),
+            ("استخدام الميزانية", "pct", 100, "range"),
+            ("إيراد المشروع", "SAR", 0, "higher_better"),
+        ]
+    else:
+        items = [
+            ("إيراد منسوب للشراكة", "SAR", 0, "higher_better"),
+            ("عملاء جدد عبر الشراكة", "count", 0, "higher_better"),
+            ("توفير تكاليف", "SAR", 0, "higher_better"),
+        ]
+    for name, unit, target, direction in items:
+        kt = KPITarget(
+            relationship_id=rel.id,
+            name=name,
+            unit=unit,
+            target_value=target if target else 1,
+            direction=direction if direction != "range" else "range",
+            range_min=90 if direction == "range" else None,
+            range_max=110 if direction == "range" else None,
+        )
+        db.session.add(kt)
+
+
+def _import_kpi_csv(rel, file_storage):
+    if not file_storage or not file_storage.filename:
+        flash("ارفع ملف CSV.", "err")
+        return
+    try:
+        text = file_storage.read().decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(text))
+        count = 0
+        for row in reader:
+            target = KPITarget.query.filter_by(relationship_id=rel.id, name=row.get("kpi_name", "").strip()).first()
+            if not target:
+                continue
+            add_actual(target, row["period"], row["actual_value"], "csv")
+            count += 1
+        refresh_alerts(rel)
+        record_event("kpi_update", True, details=f"csv_rows={count}")
+        flash(f"تم استيراد {count} صف.", "ok")
+    except Exception as exc:
+        record_event("kpi_update_failure", False, error_code="csv", details=str(exc))
+        flash("فشل الاستيراد. استخدم القالب: kpi_name,period,actual_value", "err")
+
+
+def _relationship_ai_summary(rel, simulate_timeout=False):
+    t0 = time.time()
+    kpi_rows = [evaluate_target(t) for t in rel.kpi_targets]
+    try:
+        summary, mode, tok_in, tok_out = summarize_relationship(
+            rel, kpi_rows, rel.milestones, rel.alerts, simulate_timeout=simulate_timeout
+        )
+        latency = int((time.time() - t0) * 1000)
+        record_event(
+            "ai_monitor_summary",
+            True,
+            latency_ms=latency,
+            tokens_in=tok_in,
+            tokens_out=tok_out,
+            details=f"rel={rel.id};mode={mode}",
+        )
+        return render_template(
+            "partnership_detail.html",
+            rel=rel,
+            kpi_rows=kpi_rows,
+            summary=summary,
+        )
+    except Exception as exc:
+        latency = int((time.time() - t0) * 1000)
+        record_event("ai_monitor_summary", False, latency_ms=latency, error_code="timeout", details=str(exc)[:400])
+        flash(f"فشل ملخص الذكاء الاصطناعي: {exc}", "err")
+        return redirect(url_for("main.partnership_detail", rel_id=rel.id))

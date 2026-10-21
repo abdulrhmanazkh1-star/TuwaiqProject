@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}مراقبة النظام{% endblock %}
+{% block content %}
+<section class="hero">
+  <h2>لوحة مراقبة النظام التقنية</h2>
+  <p class="muted">الأرقام محسوبة من جدول الأحداث الفعلي. هذه اللوحة منفصلة معمارياً عن مراقبة أداء الشراكات.</p>
+</section>
+<div class="grid grid-3">
+  <div class="metric"><div class="label">إجمالي الأحداث</div><b>{{ metrics.total }}</b></div>
+  <div class="metric"><div class="label">مكتمل</div><b>{{ metrics.completed }}</b></div>
+  <div class="metric"><div class="label">فشل</div><b>{{ metrics.failed }}</b></div>
+  <div class="metric"><div class="label">نسبة الأخطاء</div><b>{{ metrics.error_rate }}%</b></div>
+  <div class="metric"><div class="label">متوسط الكمون</div><b>{{ metrics.avg_latency_ms }} ms</b></div>
+  <div class="metric"><div class="label">فشل AI</div><b>{{ metrics.ai_failures }}</b></div>
+  <div class="metric"><div class="label">فشل التحقق</div><b>{{ metrics.validation_failures }}</b></div>
+  <div class="metric"><div class="label">فشل تحديث KPI</div><b>{{ metrics.kpi_failures }}</b></div>
+  <div class="metric"><div class="label">حداثة البيانات (دقائق)</div><b>{{ metrics.freshness_minutes if metrics.freshness_minutes is not none else '—' }}</b></div>
+  <div class="metric"><div class="label">توكنات (داخل/خارج)</div><b>{{ metrics.tokens_in }} / {{ metrics.tokens_out }}</b></div>
+  <div class="metric"><div class="label">تكلفة تقديرية USD</div><b>{{ metrics.estimated_cost_usd }}</b></div>
+</div>
+<div class="grid grid-2" style="margin-top:16px">
+  <div class="card">
+    <h3>محاكاة أعطال للعرض</h3>
+    <form method="post" action="{{ url_for('main.simulate') }}" class="stack">
+      <button class="btn" name="kind" value="ai_timeout">انتهاء مهلة AI</button>
+      <button class="btn secondary" name="kind" value="missing_company">شركة ناقصة</button>
+      <button class="btn secondary" name="kind" value="invalid_kpi">قيمة مؤشر غير صالحة</button>
+      <button class="btn gold" name="kind" value="delayed_analysis">تحليل متأخر</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3>توزيع الأنواع</h3>
+    <canvas id="typeChart" height="140"></canvas>
+  </div>
+</div>
+<div class="card" style="margin-top:16px">
+  <h3>آخر الأحداث</h3>
+  <table>
+    <thead><tr><th>الوقت</th><th>النوع</th><th>نجاح</th><th>كمون</th><th>رمز الخطأ</th><th>تفاصيل</th></tr></thead>
+    <tbody>
+    {% for e in metrics.recent %}
+      <tr>
+        <td>{{ e.created_at }}</td>
+        <td>{{ e.event_type }}</td>
+        <td>{{ 'نعم' if e.success else 'لا' }}</td>
+        <td>{{ e.latency_ms }}</td>
+        <td>{{ e.error_code }}</td>
+        <td>{{ e.details }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<script>
+const types = {{ metrics.by_type | tojson }};
+new Chart(document.getElementById('typeChart'), {
+  type: 'bar',
+  data: {
+    labels: types.map(t => t.type),
+    datasets: [{ label: 'عدد', data: types.map(t => t.count), backgroundColor: '#1b4f8a' }]
+  },
+  options: { plugins: { legend: { display: false } } }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}مقارنة الشركات{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>مقارنة شركتين</h2>
+  <p class="muted">اختر شركة أ، شركة ب، ونوع العلاقة. الدرجات تُحسب بالصيغ، ثم يُولَّد تقرير سردي.</p>
+  <form class="stack" method="post">
+    <label>الشركة أ
+      <select name="company_a" required>
+        {% for c in companies %}
+        <option value="{{ c.id }}">{{ c.official_name }} — {{ c.symbol }} ({{ c.sector }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>الشركة ب
+      <select name="company_b" required>
+        {% for c in companies %}
+        <option value="{{ c.id }}" {% if loop.index0 == 1 %}selected{% endif %}>{{ c.official_name }} — {{ c.symbol }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>نوع العلاقة
+      <select name="analysis_type">
+        <option value="partnership">شراكة استراتيجية</option>
+        <option value="equity_investment">استثمار حقوق ملكية (أ يستثمر في ب)</option>
+        <option value="joint_venture">مشروع مشترك</option>
+      </select>
+    </label>
+    <label><input type="checkbox" name="simulate" value="timeout"> محاكاة انتهاء مهلة AI (لاختبار المراقبة)</label>
+    <button class="btn" type="submit">بدء التحليل</button>
+  </form>
+</div>
+{% endblock %}
