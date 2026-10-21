@@ -164,11 +164,6 @@ def _demo_narrative(company_a, company_b, analysis_type, score_payload):
         "البيانات التجريبية قد لا تطابق الإفصاح الفعلي.",
         "أي درجة توافق ليست توصية استثمارية.",
     ]
-    if analysis_type == "equity_investment":
-        opportunities = [
-            "التقييم اتجاهي: قدرة المستثمر على النظر في الشركة المستهدفة وفق المؤشرات المتوفرة.",
-        ]
-        risks.append("لا توجد توصية بشراء أسهم؛ التقييم السوقي قد يكون غير متاح.")
     return {
         "opportunities": opportunities,
         "risks": risks,

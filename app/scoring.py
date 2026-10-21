@@ -19,17 +19,6 @@ PARTNERSHIP_WEIGHTS = {
     "risk_control": 0.05,
 }
 
-INVESTMENT_WEIGHTS = {
-    "revenue_growth": 0.20,
-    "profitability": 0.20,
-    "liquidity": 0.15,
-    "debt_stability": 0.15,
-    "performance_trend": 0.10,
-    "market_valuation": 0.05,
-    "strategic_rationale": 0.10,
-    "risk_control": 0.05,
-}
-
 JV_WEIGHTS = {
     "resource_complementarity": 0.20,
     "operational_capability": 0.15,
@@ -70,46 +59,6 @@ def latest_financials(company, year=None):
     else:
         previous = None
     return current, previous
-
-
-def growth_rate(current, previous):
-    if current is None or previous is None or previous == 0:
-        return None
-    return (current - previous) / abs(previous)
-
-
-def profit_margin(fin):
-    if not fin or fin.revenue in (None, 0) or fin.net_income is None:
-        return None
-    return fin.net_income / fin.revenue
-
-
-def current_ratio(fin):
-    if not fin or not fin.current_liabilities or fin.current_assets is None:
-        return None
-    return fin.current_assets / fin.current_liabilities
-
-
-def debt_ratio(fin):
-    if not fin or not fin.total_assets or fin.total_liabilities is None:
-        return None
-    return fin.total_liabilities / fin.total_assets
-
-
-def score_from_ratio(value, good, excellent, invert=False):
-    if value is None:
-        return None
-    if invert:
-        if value <= excellent:
-            return 92
-        if value <= good:
-            return 75
-        return clamp(75 - (value - good) * 80)
-    if value >= excellent:
-        return 92
-    if value >= good:
-        return 75
-    return clamp(40 + value / good * 35)
 
 
 def complementarity_score(sector_a, sector_b):
@@ -201,58 +150,6 @@ def score_partnership(company_a, company_b) -> dict:
     }
 
 
-def score_investment(investor, target) -> dict:
-    """Directional: investor (A) considering equity in target (B)."""
-    fin_t, prev_t = latest_financials(target)
-    fin_i, _ = latest_financials(investor)
-    g = None
-    if fin_t and prev_t:
-        g = growth_rate(fin_t.revenue, prev_t.revenue)
-    growth_s = None if g is None else score_from_ratio(g, 0.05, 0.12)
-    margin = profit_margin(fin_t) if fin_t else None
-    profit_s = None if margin is None else score_from_ratio(margin, 0.08, 0.18)
-    liq = current_ratio(fin_t) if fin_t else None
-    liq_s = None if liq is None else score_from_ratio(liq, 1.0, 1.5)
-    debt = debt_ratio(fin_t) if fin_t else None
-    debt_s = None if debt is None else score_from_ratio(debt, 0.55, 0.35, invert=True)
-    trend_s = growth_s
-    val_s = 70 if fin_t and fin_t.market_cap else None
-    val_conf = 0.7 if val_s else 0.0
-    val_why = (
-        "توجد قيمة سوقية مسجّلة في السجل التجريبي."
-        if val_s
-        else "لا توجد بيانات تقييم سوقي موثوقة؛ لا يُوصى بشراء أسهم بناءً على التوافق وحده."
-    )
-    strat, sconf, swhy = complementarity_score(investor.sector, target.sector)
-    capacity_ok = bool(fin_i and fin_i.revenue and fin_t and fin_t.revenue)
-    risk = 72 if (debt is not None and debt < 0.6) else 50
-    criteria = [
-        criterion("revenue_growth", growth_s, INVESTMENT_WEIGHTS["revenue_growth"], 0.8 if g is not None else 0.0, "نمو إيرادات الشركة المستهدفة بين آخر فترتين." if g is not None else "لا يمكن حساب النمو دون فترتين ماليتين."),
-        criterion("profitability", profit_s, INVESTMENT_WEIGHTS["profitability"], 0.8 if margin is not None else 0.0, "هامش صافي الدخل إلى الإيرادات."),
-        criterion("liquidity", liq_s, INVESTMENT_WEIGHTS["liquidity"], 0.75 if liq is not None else 0.0, "النسبة الجارية = الأصول المتداولة / الالتزامات المتداولة."),
-        criterion("debt_stability", debt_s, INVESTMENT_WEIGHTS["debt_stability"], 0.75 if debt is not None else 0.0, "نسبة الالتزامات إلى الأصول."),
-        criterion("performance_trend", trend_s, INVESTMENT_WEIGHTS["performance_trend"], 0.7 if trend_s else 0.0, "الاتجاه يستخدم نفس إشارة نمو الإيرادات."),
-        criterion("market_valuation", val_s, INVESTMENT_WEIGHTS["market_valuation"], val_conf, val_why),
-        criterion("strategic_rationale", strat if capacity_ok else strat, INVESTMENT_WEIGHTS["strategic_rationale"], sconf, swhy),
-        criterion("risk_control", risk, INVESTMENT_WEIGHTS["risk_control"], 0.6, "مخاطر مالية أولية من الرافعة؛ ليست توصية استثمارية."),
-    ]
-    overall, confidence = weighted_overall(criteria)
-    limitations = _limitations(fin_i, fin_t, investor, target)
-    limitations.append(
-        "التحليل اتجاهي: قدرة/اهتمام المستثمر (أ) في الشركة المستهدفة (ب) لا يساوي العكس."
-    )
-    limitations.append("لا يوصي النظام بشراء أسهم بناءً على التوافق التشغيلي وحده.")
-    return {
-        "analysis_type": "equity_investment",
-        "scoring_version": SCORING_VERSION,
-        "overall_score": overall,
-        "confidence": confidence,
-        "criteria": criteria,
-        "limitations": limitations,
-        "direction": "a_invests_in_b",
-    }
-
-
 def score_joint_venture(company_a, company_b) -> dict:
     fin_a, _ = latest_financials(company_a)
     fin_b, _ = latest_financials(company_b)
@@ -286,11 +183,11 @@ def score_joint_venture(company_a, company_b) -> dict:
 
 
 def analyze_pair(company_a, company_b, analysis_type: str) -> dict:
-    if analysis_type == "equity_investment":
-        return score_investment(company_a, company_b)
     if analysis_type == "joint_venture":
         return score_joint_venture(company_a, company_b)
-    return score_partnership(company_a, company_b)
+    if analysis_type == "partnership":
+        return score_partnership(company_a, company_b)
+    raise ValueError("نوع التحليل غير مدعوم")
 
 
 def _limitations(fin_a, fin_b, company_a, company_b):

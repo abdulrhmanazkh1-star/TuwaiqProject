@@ -9,6 +9,7 @@ from datetime import datetime
 from flask import (
     Blueprint,
     Response,
+    abort,
     current_app,
     flash,
     redirect,
@@ -37,7 +38,7 @@ bp = Blueprint("main", __name__)
 
 ANALYSIS_LABELS = {
     "partnership": "شراكة استراتيجية",
-    "equity_investment": "استثمار حقوق ملكية",
+    "equity_investment": "استثمار قائم",
     "joint_venture": "مشروع مشترك",
 }
 
@@ -49,13 +50,6 @@ CRITERION_LABELS = {
     "financial_capacity": "القدرة المالية",
     "operational_fit": "التوافق التشغيلي",
     "risk_control": "إدارة المخاطر",
-    "revenue_growth": "نمو الإيرادات",
-    "profitability": "الربحية",
-    "liquidity": "السيولة المالية",
-    "debt_stability": "الديون والاستقرار المالي",
-    "performance_trend": "اتجاه الأداء المالي",
-    "market_valuation": "التقييم السوقي",
-    "strategic_rationale": "مبررات الاستثمار الاستراتيجي",
     "resource_complementarity": "تكامل الموارد",
     "operational_capability": "القدرات التشغيلية",
     "business_opportunity": "الفرصة التجارية",
@@ -129,6 +123,9 @@ def compare():
         b_id = request.form.get("company_b")
         analysis_type = request.form.get("analysis_type", "partnership")
         simulate = request.form.get("simulate")
+        if analysis_type not in ("partnership", "joint_venture"):
+            flash("نوع التحليل غير متاح. اختر شراكة استراتيجية أو مشروعاً مشتركاً.", "err")
+            return redirect(url_for("main.compare"))
         return _run_comparison(a_id, b_id, analysis_type, simulate)
     return render_template("compare.html", companies=companies)
 
@@ -136,6 +133,8 @@ def compare():
 @bp.route("/analysis/<int:analysis_id>")
 def analysis_detail(analysis_id):
     analysis = Analysis.query.get_or_404(analysis_id)
+    if analysis.analysis_type == "equity_investment":
+        abort(404)
     report = json.loads(analysis.report_json or "{}")
     return render_template("analysis.html", analysis=analysis, report=report)
 
@@ -146,21 +145,17 @@ def discover():
     if request.method == "POST":
         a_id = request.form.get("company_a")
         analysis_type = request.form.get("analysis_type", "partnership")
+        if analysis_type not in ("partnership", "joint_venture"):
+            flash("نوع التحليل غير متاح. اختر شراكة استراتيجية أو مشروعاً مشتركاً.", "err")
+            return redirect(url_for("main.discover"))
         return _run_discovery(a_id, analysis_type)
     return render_template("discover.html", companies=companies)
 
 
 @bp.route("/investment", methods=["GET", "POST"])
-def investment():
-    companies = Company.query.order_by(Company.official_name).all()
-    if request.method == "POST":
-        return _run_comparison(
-            request.form.get("company_a"),
-            request.form.get("company_b"),
-            "equity_investment",
-            request.form.get("simulate"),
-        )
-    return render_template("investment.html", companies=companies)
+def removed_investment_analysis():
+    flash("أُزيل تحليل الاستثمار. يمكنك متابعة الشراكات والاستثمارات المعتمدة من صفحة مراقبة الشراكات.", "ok")
+    return redirect(url_for("main.compare"))
 
 
 @bp.route("/partnerships")
@@ -333,7 +328,7 @@ def simulate():
 
 @bp.route("/reports")
 def reports():
-    analyses = Analysis.query.order_by(Analysis.created_at.desc()).limit(20).all()
+    analyses = Analysis.query.filter(Analysis.analysis_type.in_(("partnership", "joint_venture"))).order_by(Analysis.created_at.desc()).limit(20).all()
     rels = BusinessRelationship.query.all()
     return render_template("reports.html", analyses=analyses, relationships=rels)
 

@@ -2,7 +2,6 @@ from types import SimpleNamespace
 from app.scoring import (
     analyze_pair,
     kpi_achievement,
-    score_investment,
     score_partnership,
 )
 
@@ -51,29 +50,6 @@ def test_missing_financials_lowers_confidence():
     fin_crit = next(c for c in result["criteria"] if c["criterion"] == "financial_capacity")
     assert fin_crit["score"] is None
     assert result["confidence"] < 0.8
-
-
-def test_investment_is_directional():
-    strong = _company(
-        "Strong",
-        "مصارف",
-        "تمويل",
-        [_fin(2023, 100, 20, 800, 600, 100, 80), _fin(2024, 130, 30, 850, 590, 120, 75)],
-        1,
-    )
-    weak = _company(
-        "Weak",
-        "تقنية مالية",
-        "مدفوعات",
-        [_fin(2023, 10, -2, 12, 9, 3, 4), _fin(2024, 9, -3, 11, 10, 2, 5)],
-        2,
-    )
-    a_into_b = score_investment(strong, weak)
-    b_into_a = score_investment(weak, strong)
-    assert a_into_b["overall_score"] != b_into_a["overall_score"]
-    assert "اتجاهي" in " ".join(a_into_b["limitations"]) or "directional" in str(a_into_b).lower() or any(
-        "اتجاهي" in x for x in a_into_b["limitations"]
-    )
 
 
 def test_ranking_consistency():
