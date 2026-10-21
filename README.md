@@ -26,7 +26,7 @@ python run.py
 
 ## متغيرات البيئة
 
-راجع `.env.example`: `LLM_API_KEY` و`LLM_BASE_URL` و`LLM_MODEL` و`DATABASE_URL`. اترك مفتاح API فارغاً لتشغيل Demo Mode.
+لربط Gemini، أنشئ مفتاحاً من [Google AI Studio](https://aistudio.google.com/apikey)، ثم انسخ `.env.example` إلى `.env` وضع المفتاح في `GEMINI_API_KEY`. يستخدم التطبيق افتراضياً `gemini-3.8-flash` عبر واجهة Gemini المتوافقة مع OpenAI. أعد تشغيل التطبيق بعد حفظ المفتاح. ملف `.env` مستثنى من Git؛ لا ترفع المفتاح إلى GitHub. عند ترك المفتاح فارغاً يعمل التطبيق بوضع تجريبي بقواعد ثابتة، ولا يرسل طلبات إلى Gemini.
 
 ## خطوات العرض
 
