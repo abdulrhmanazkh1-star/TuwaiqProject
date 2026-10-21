@@ -13,9 +13,9 @@
           <td>{{ analysis_labels.get(a.analysis_type, a.analysis_type) }}</td>
           <td>{{ a.company_a.official_name if a.company_a else '—' }}</td>
           <td>{{ a.company_b.official_name if a.company_b else 'اكتشاف' }}</td>
-          <td>{{ a.mode }} / {{ a.status }}</td>
-          <td><a href="{{ url_for('main.analysis_detail', analysis_id=a.id) }}">عرض</a>
-              · <a href="{{ url_for('main.analysis_json', analysis_id=a.id) }}">JSON</a></td>
+          <td>{{ analysis_status_text(a) }}</td>
+          <td><a href="{{ url_for('main.analysis_detail', analysis_id=a.id) }}">عرض التقرير</a>
+              · <a href="{{ url_for('main.analysis_json', analysis_id=a.id) }}">بيانات التقرير</a></td>
         </tr>
       {% endfor %}
       </tbody>

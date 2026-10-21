@@ -41,12 +41,74 @@ ANALYSIS_LABELS = {
     "joint_venture": "مشروع مشترك",
 }
 
+CRITERION_LABELS = {
+    "business_complementarity": "تكامل الأنشطة التجارية",
+    "product_compatibility": "توافق المنتجات والخدمات",
+    "partnership_opportunity": "فرص التعاون",
+    "strategic_alignment": "التوافق الاستراتيجي",
+    "financial_capacity": "القدرة المالية",
+    "operational_fit": "التوافق التشغيلي",
+    "risk_control": "إدارة المخاطر",
+    "revenue_growth": "نمو الإيرادات",
+    "profitability": "الربحية",
+    "liquidity": "السيولة المالية",
+    "debt_stability": "الديون والاستقرار المالي",
+    "performance_trend": "اتجاه الأداء المالي",
+    "market_valuation": "التقييم السوقي",
+    "strategic_rationale": "مبررات الاستثمار الاستراتيجي",
+    "resource_complementarity": "تكامل الموارد",
+    "operational_capability": "القدرات التشغيلية",
+    "business_opportunity": "الفرصة التجارية",
+    "project_feasibility": "جدوى المشروع",
+    "implementation_risk": "مخاطر التنفيذ",
+    "mutual_benefit": "المنفعة المتبادلة",
+}
+
+STATUS_LABELS = {
+    "draft": "مسودة",
+    "approved": "معتمدة",
+    "signed": "موقّعة",
+    "active": "نشطة",
+    "completed": "مكتملة",
+    "failed": "تعذّر إكمالها",
+    "On Track": "على المسار الصحيح",
+    "Needs Attention": "تحتاج إلى متابعة",
+    "Off Track": "متأخرة عن الهدف",
+    "Insufficient Data": "بيانات غير كافية",
+    "pending": "قيد الانتظار",
+    "delayed": "متأخرة عن موعدها",
+}
+
+
+def score_class(score):
+    if score is None:
+        return "score-low"
+    if score >= 60:
+        return "score-high"
+    if score >= 40:
+        return "score-mid"
+    return "score-low"
+
+
+def analysis_status_text(analysis):
+    if analysis.status == "failed":
+        return "تعذّر إكمال التحليل. راجع سجل الأخطاء في لوحة مراقبة النظام."
+    if analysis.mode == "demo_rules":
+        return f"اكتمل التحليل باستخدام قواعد التقييم التجريبية خلال {analysis.latency_ms} ملي ثانية."
+    if analysis.mode == "hybrid":
+        return f"اكتمل التحليل بمساعدة الذكاء الاصطناعي خلال {analysis.latency_ms} ملي ثانية."
+    return f"اكتمل التحليل خلال {analysis.latency_ms} ملي ثانية."
+
 
 @bp.app_context_processor
 def inject_globals():
     return {
         "llm_mode": "llm" if llm_configured() else "demo",
         "analysis_labels": ANALYSIS_LABELS,
+        "criterion_labels": CRITERION_LABELS,
+        "status_labels": STATUS_LABELS,
+        "score_class": score_class,
+        "analysis_status_text": analysis_status_text,
         "scoring_version": SCORING_VERSION,
     }
 

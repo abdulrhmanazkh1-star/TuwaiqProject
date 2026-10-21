@@ -8,7 +8,7 @@
       <p>
         <a href="{{ url_for('main.partnership_detail', rel_id=r.id) }}"><b>{{ r.name }}</b></a>
         {% if r.is_simulated %}<span class="demo-tag">مُحاكاة</span>{% endif %}
-        <br><small class="muted">{{ r.company_a.official_name }} × {{ r.company_b.official_name }} · {{ r.status }} · {{ analysis_labels.get(r.relationship_type, r.relationship_type) }}</small>
+        <br><small class="muted">{{ r.company_a.official_name }} × {{ r.company_b.official_name }} · {{ status_labels.get(r.status, 'قيد المراجعة') }} · {{ analysis_labels.get(r.relationship_type, r.relationship_type) }}</small>
       </p>
     {% else %}
       <p class="muted">لا توجد علاقات بعد.</p>

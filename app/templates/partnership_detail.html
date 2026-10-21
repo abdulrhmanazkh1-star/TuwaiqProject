@@ -5,7 +5,7 @@
   {% if rel.is_simulated %}<span class="demo-tag">علاقة مُحاكاة — ليست سجلات سرية لشركة حقيقية</span>{% endif %}
   <h2>{{ rel.name }}</h2>
   <p>{{ rel.company_a.official_name }} × {{ rel.company_b.official_name }}</p>
-  <p class="muted">الحالة: {{ rel.status }} · النوع: {{ analysis_labels.get(rel.relationship_type, rel.relationship_type) }} · من {{ rel.start_date }}{% if rel.planned_end_date %} إلى {{ rel.planned_end_date }}{% endif %}</p>
+  <p class="muted">الحالة: {{ status_labels.get(rel.status, 'قيد المراجعة') }} · النوع: {{ analysis_labels.get(rel.relationship_type, rel.relationship_type) }} · من {{ rel.start_date }}{% if rel.planned_end_date %} إلى {{ rel.planned_end_date }}{% endif %}</p>
 </section>
 
 {% if investment_summary %}
@@ -31,10 +31,10 @@
     <div class="label">{{ k.name }} ({{ k.unit }})</div>
     <b>{{ k.actual_value if k.actual_value is not none else '—' }} / {{ k.target_value }}</b>
     <div>
-      {% if k.status == 'On Track' %}<span class="tag ok">On Track</span>
-      {% elif k.status == 'Needs Attention' %}<span class="tag warn">Needs Attention</span>
-      {% elif k.status == 'Off Track' %}<span class="tag bad">Off Track</span>
-      {% else %}<span class="tag navy">Insufficient Data</span>{% endif %}
+      {% if k.status == 'On Track' %}<span class="tag ok">على المسار الصحيح</span>
+      {% elif k.status == 'Needs Attention' %}<span class="tag warn">تحتاج إلى متابعة</span>
+      {% elif k.status == 'Off Track' %}<span class="tag bad">متأخرة عن الهدف</span>
+      {% else %}<span class="tag navy">بيانات غير كافية</span>{% endif %}
     </div>
     <small class="muted">إنجاز {{ k.achievement_pct if k.achievement_pct is not none else '—' }}% · انحراف {{ k.variance if k.variance is not none else '—' }} · اتجاه {{ k.direction }}</small>
   </div>
@@ -72,7 +72,7 @@
     <h3>المعالم والتنبيهات</h3>
     <ul>
       {% for m in rel.milestones %}
-        <li>{{ m.title }} — {{ m.status }} ({{ m.due_date }}) · {{ m.progress_pct }}%
+        <li>{{ m.title }} — {{ status_labels.get(m.status, 'قيد التنفيذ') }} ({{ m.due_date }}) · {{ m.progress_pct }}٪
           {% if not m.completed_at %}
           <form method="post" style="display:inline">
             <input type="hidden" name="action" value="complete_milestone">
@@ -92,7 +92,7 @@
     <h4>تنبيهات</h4>
     <ul>
       {% for a in rel.alerts %}
-        <li><span class="tag {% if a.severity=='high' %}bad{% elif a.severity=='medium' %}warn{% else %}navy{% endif %}">{{ a.status_label }}</span> {{ a.message }}</li>
+        <li><span class="tag {% if a.severity=='high' %}bad{% elif a.severity=='medium' %}warn{% else %}navy{% endif %}">{{ status_labels.get(a.status_label, 'قيد المتابعة') }}</span> {{ a.message }}</li>
       {% else %}
         <li class="muted">لا تنبيهات حالياً.</li>
       {% endfor %}

@@ -3,17 +3,16 @@
 {% block content %}
 <section class="hero">
   <h2>مرشحون لـ {{ company_a.official_name }}</h2>
-  <p class="muted">النوع: {{ analysis_labels.get(analysis_type) }} · أُعيد استخدام صيغ {{ scoring_version }} · عدد المُرتَّبين من السجل المحلي فقط.</p>
+  <p class="muted">نوع التحليل: {{ analysis_labels.get(analysis_type) }} · الترتيب مبني على الشركات المسجلة في المنصة فقط.</p>
 </section>
 <table>
-  <thead><tr><th>الرتبة</th><th>الشركة</th><th>الدرجة</th><th>الثقة</th><th>لماذا</th><th>قيود</th><th></th></tr></thead>
+  <thead><tr><th>الترتيب</th><th>الشركة</th><th>الدرجة</th><th>سبب الترشيح</th><th>ملاحظات</th><th></th></tr></thead>
   <tbody>
   {% for rec, cand, payload in ranked %}
     <tr>
       <td>{{ rec.rank }}</td>
       <td>{{ cand.official_name }} <span class="tag navy">{{ cand.symbol }}</span><br><small>{{ cand.sector }}</small></td>
-      <td>{{ rec.overall_score }}</td>
-      <td>{{ rec.confidence }}</td>
+      <td><span class="score-badge {{ score_class(rec.overall_score) }}">{{ rec.overall_score }}</span></td>
       <td>{{ rec.why }}</td>
       <td>{{ rec.limitations }}</td>
       <td>

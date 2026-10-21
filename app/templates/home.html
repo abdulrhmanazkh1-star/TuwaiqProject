@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% block title %}الرئيسية — CompatibilityMatch AI{% endblock %}
+{% block title %}الرئيسية — توافق{% endblock %}
 {% block content %}
 <section class="hero">
-  <span class="demo-tag">MVP أكاديمي</span>
-  <h2>اكتشف الشريك أو الاستثمار، ثم راقب هل العلاقة تحقق أهدافها.</h2>
-  <p class="muted">المنصة تغطي دورة: اكتشاف → تحليل → تقييم → قرار → مراقبة → تحسين. الدرجات رقمية من صيغ بايثون موثّقة ({{ scoring_version }}). السرد بالذكاء الاصطناعي أو وضع التجربة المُعلَّم.</p>
+  <div class="hero-brand"><span class="hero-symbol" aria-hidden="true">⇄</span><div><span class="demo-tag">مشروع أكاديمي</span><h2>توافق</h2></div></div>
+  <h2>اكتشف فرص التعاون والاستثمار، وتابع أثرها بعد اعتمادها.</h2>
+  <p class="muted">منصة تساعدك على مقارنة الشركات السعودية، وفهم فرص الشراكة ومخاطرها، ومتابعة النتائج بمؤشرات واضحة.</p>
   <p class="muted">السجل يحتوي {{ companies|length }} شركة مساهمة مدرجة في السوق الرئيسية، مع أسماء ورموز مرجعية من دليل تداول السعودية. أوصاف الأنشطة مختصرة، والبيانات المالية غير مستوردة.</p>
 </section>
 <div class="grid grid-3">
-  <div class="metric"><div class="label">طلبات تحليل/أحداث مرصودة</div><b>{{ metrics.total }}</b></div>
+  <div class="metric"><div class="label">التحليلات والأحداث المسجلة</div><b>{{ metrics.total }}</b></div>
   <div class="metric"><div class="label">نسبة الأخطاء التقنية</div><b>{{ metrics.error_rate }}%</b></div>
-  <div class="metric"><div class="label">متوسط زمن الاستجابة</div><b>{{ metrics.avg_latency_ms }} ms</b></div>
+  <div class="metric"><div class="label">متوسط زمن الاستجابة</div><b>{{ metrics.avg_latency_ms }} ملي ثانية</b></div>
 </div>
 <div class="grid grid-2" style="margin-top:16px">
   <div class="card">
@@ -43,7 +43,7 @@
     {% for c in companies %}
       <tr>
         <td><b>{{ c.symbol }}</b></td>
-        <td>{{ c.official_name }}<br><small class="muted">{{ c.official_name_en }}</small></td>
+        <td>{{ c.official_name }}</td>
         <td>{{ c.sector }}<br><small class="muted">{{ c.subsector }}</small></td>
         <td>{{ c.products_services }}</td>
         <td><a href="{{ c.source_url }}" target="_blank" rel="noopener">تداول</a></td>

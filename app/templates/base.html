@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}CompatibilityMatch AI{% endblock %}</title>
+  <title>{% block title %}توافق{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -12,10 +12,12 @@
 <body>
   <header class="app-header">
     <div class="brand">
-      <div class="logo-mark">CM</div>
+      <div class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" focusable="false"><path d="M9 26.5 19.5 16l7 7L39 10.5"/><path d="M29.5 10.5H39V20"/><circle cx="11" cy="36" r="4"/><circle cx="24" cy="36" r="4"/><circle cx="37" cy="36" r="4"/></svg>
+      </div>
       <div>
-        <h1>CompatibilityMatch AI</h1>
-        <p>ذكاء الشراكات والاستثمار — أسماء الشركات ورموزها من تداول السعودية</p>
+        <h1>توافق | ذكاء الشراكات</h1>
+        <p>تحليل فرص التعاون والاستثمار بين الشركات السعودية</p>
       </div>
     </div>
     <nav class="nav">
@@ -28,7 +30,7 @@
       <a href="{{ url_for('main.reports') }}">التقارير</a>
     </nav>
     <span class="mode-pill">
-      {% if llm_mode == 'llm' %}وضع النموذج اللغوي متصل{% else %}وضع التجربة — قواعد حتمية (ليس استدلال AI حي){% endif %}
+      {% if llm_mode == 'llm' %}تحليل بمساعدة الذكاء الاصطناعي{% else %}وضع تجريبي — تحليل آلي بقواعد ثابتة{% endif %}
     </span>
   </header>
   <main class="container">
@@ -39,6 +41,6 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
-  <div class="footer">CompatibilityMatch AI — مشروع جامعي لمادة تطوير ومراقبة منتج الذكاء الاصطناعي. ليس استشارة استثمارية.</div>
+  <div class="footer">توافق — أداة مساندة لتحليل فرص التعاون بين الشركات، ولا تُعدّ توصية استثمارية.</div>
 </body>
 </html>

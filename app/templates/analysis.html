@@ -9,22 +9,19 @@
   <h2>{{ analysis.company_a.official_name }}
     {% if analysis.company_b %} ← {{ analysis.company_b.official_name }}{% endif %}
   </h2>
-  <p class="muted">الحالة: {{ analysis.status }} · الوضع: {{ analysis.mode }} · زمن: {{ analysis.latency_ms }} ms · إصدار الدرجات: {{ analysis.scoring_version }}</p>
-  <p class="score-ring">{{ report.scores.overall_score if report.scores else '—' }} / 100</p>
-  <p class="muted">ثقة البيانات: {{ report.scores.confidence if report.scores else '—' }}</p>
+  <p class="muted">{{ analysis_status_text(analysis) }}</p>
+  <p class="score-ring {{ score_class(report.scores.overall_score if report.scores else none) }}">{{ report.scores.overall_score if report.scores else '—' }} من 100</p>
 </section>
 <div class="grid grid-2">
   <div class="card">
     <h3>معايير الشفافية</h3>
     <table>
-      <thead><tr><th>المعيار</th><th>الدرجة</th><th>الوزن</th><th>الثقة</th></tr></thead>
+      <thead><tr><th>المعيار</th><th>الدرجة</th></tr></thead>
       <tbody>
       {% for s in analysis.scores %}
         <tr>
-          <td>{{ s.criterion }}<br><small class="muted">{{ s.explanation }}</small></td>
-          <td>{{ s.score if s.score is not none else 'غير متاح' }}</td>
-          <td>{{ s.weight }}</td>
-          <td>{{ s.confidence }}</td>
+          <td>{{ criterion_labels.get(s.criterion, s.criterion) }}<br><small class="muted">{{ s.explanation }}</small></td>
+          <td><span class="score-badge {{ score_class(s.score) }}">{{ s.score if s.score is not none else 'غير متاح' }}</span></td>
         </tr>
       {% endfor %}
       </tbody>
