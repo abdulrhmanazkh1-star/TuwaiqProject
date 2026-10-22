@@ -40,7 +40,7 @@ def test_partnership_telecom_fintech_outranks_same_sector():
     a = score_partnership(tel, fin)
     b = score_partnership(tel, other_tel)
     assert a["overall_score"] > b["overall_score"]
-    assert a["scoring_version"] == "cm-score-v1"
+    assert a["scoring_version"] == "cm-score-v2"
 
 
 def test_missing_financials_lowers_confidence():

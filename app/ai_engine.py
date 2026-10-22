@@ -174,21 +174,17 @@ def _demo_narrative(company_a, company_b, analysis_type, score_payload):
     overall = score_payload.get("overall_score")
     limitations = score_payload.get("limitations") or []
     b_name = company_b.official_name if company_b else "—"
-    opportunities = [
-        f"تكامل محتمل بين نشاط {company_a.official_name} و{b_name} حسب القطاع المسجّل فقط.",
-        "يمكن استكشاف قنوات توزيع أو خدمات مشتركة دون افتراض إيرادات مستقبلية.",
+    opportunities = score_payload.get("strengths") or [
+        f"لم تظهر قدرات متكاملة محددة بين {company_a.official_name} و{b_name} في البيانات المسجلة."
     ]
-    risks = [
-        "البيانات التجريبية قد لا تطابق الإفصاح الفعلي.",
-        "أي درجة توافق ليست توصية استثمارية.",
-    ]
+    risks = score_payload.get("risks") or ["لا تكفي البيانات الحالية لتحديد مخاطر العلاقة."]
     return {
         "opportunities": opportunities,
         "risks": risks,
         "collaborations": [
             f"نوع العلاقة المقترحة للدرس: {analysis_type} بدرجة إجمالية {overall} (صيغة {score_payload.get('scoring_version')})."
         ],
-        "evidence_summary": "النصوص مُولَّدة بقواعد حتمية من بيانات السجل المحلي، وليست استدلال نموذج لغوي حي.",
+        "evidence_summary": f"تم اشتقاق الشرح من وصف الأنشطة والقدرات المسجلة. تغطية المعلومات المستخدمة {round((score_payload.get('evidence_coverage') or 0) * 100)}٪. النص حتمي ولا يمثل استدلال نموذج لغوي حي.",
         "caveats": limitations,
         "demo_mode": True,
         "facts_vs_interpretation": {

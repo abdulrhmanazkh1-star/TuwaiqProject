@@ -8,7 +8,7 @@ These diagrams match the running Flask + SQLite application, not a conceptual fu
 flowchart LR
   A[Requirements\nTuwaiq Project 1] --> B[Data preparation\nseed.py + CSV import]
   B --> C[Backend\nFlask + SQLAlchemy models]
-  C --> D[Scoring engine\napp/scoring.py v1]
+  C --> D[Scoring engine\napp/scoring_engine.py cm-score-v2]
   D --> E[AI integration\nai_engine.py\nLLM or Demo Mode]
   E --> F[Frontend RTL\nJinja + Chart.js]
   F --> G[Pytest\ntests/]

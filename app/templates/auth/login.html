@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}تسجيل الدخول — مِشراك{% endblock %}
+{% block content %}
+<section class="auth-wrap">
+  <div class="auth-intro"><span class="demo-tag">منصة مِشراك</span><h2>مرحباً بك</h2><p class="muted">سجّل الدخول للوصول إلى أدوات مقارنة الشركات واكتشاف فرص التعاون.</p></div>
+  <div class="auth-cards">
+    <section class="card auth-card"><div class="auth-icon">◉</div><h3>مساحة المستخدم</h3><p class="muted">قارن الشركات واكتشف فرص التعاون واطّلع على التقارير.</p>
+      <a class="btn auth-link-btn" href="{{ url_for('auth.login_user', next=next_url) }}">الانتقال إلى دخول المستخدم</a>
+      <p class="auth-foot">مستخدم جديد؟ <a href="{{ url_for('auth.register') }}">إنشاء حساب مستخدم</a></p>
+    </section>
+    <section class="card auth-card admin-card"><div class="auth-icon">◆</div><h3>مساحة المدير</h3><p class="muted">إدارة النظام والوصول إلى مراقبة النظام والصلاحيات الإدارية.</p>
+      <a class="btn gold auth-link-btn" href="{{ url_for('auth.login_admin', next=next_url) }}">الانتقال إلى دخول المدير</a>
+      <p class="auth-foot">مدير جديد؟ <a href="{{ url_for('auth.register_admin') }}">إنشاء حساب مدير</a></p>
+    </section>
+  </div>
+</section>
+{% endblock %}

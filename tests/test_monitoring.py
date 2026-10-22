@@ -5,7 +5,7 @@ from app.monitoring import dashboard_metrics
 def test_home_loads(client):
     res = client.get("/")
     assert res.status_code == 200
-    assert "CompatibilityMatch".encode("utf-8") in res.data or "CompatibilityMatch" in res.get_data(as_text=True)
+    assert "مِشراك" in res.get_data(as_text=True)
     assert "7020" in res.get_data(as_text=True)
     assert "2222" in res.get_data(as_text=True)
 

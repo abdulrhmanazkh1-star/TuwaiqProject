@@ -2,16 +2,16 @@
 {% block title %}الرئيسية — مِشراك{% endblock %}
 {% block content %}
 <section class="hero">
-  <div class="hero-brand"><span class="hero-symbol" aria-hidden="true">⇄</span><div><span class="demo-tag">مشروع أكاديمي</span><h2>مِشراك</h2></div></div>
+  <div class="hero-brand"><span class="hero-symbol" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M6 15h13v25H6zM29 9h13v31H29z"/><path d="M19 26h10m-6-4 4 4-4 4m7-8-4 4 4 4"/></svg></span><div><span class="demo-tag">مشروع أكاديمي</span><h2>مِشراك</h2></div></div>
   <h2>اكتشف فرص التعاون بين الشركات السعودية.</h2>
   <p class="muted">منصة تساعدك على مقارنة الشركات وفهم فرص الشراكة ومخاطرها من خلال تحليل واضح.</p>
   <p class="muted">السجل يحتوي {{ companies|length }} شركة مساهمة مدرجة في السوق الرئيسية، مع أسماء ورموز مرجعية من دليل تداول السعودية. أوصاف الأنشطة مختصرة، والبيانات المالية غير مستوردة.</p>
 </section>
-<div class="grid grid-3">
+{% if logged_in_user.role == 'admin' %}<div class="grid grid-3">
   <div class="metric"><div class="label">التحليلات والأحداث المسجلة</div><b>{{ metrics.total }}</b></div>
   <div class="metric"><div class="label">نسبة الأخطاء التقنية</div><b>{{ metrics.error_rate }}%</b></div>
   <div class="metric"><div class="label">متوسط زمن الاستجابة</div><b>{{ metrics.avg_latency_ms }} ملي ثانية</b></div>
-</div>
+</div>{% endif %}
 <div class="grid grid-2" style="margin-top:16px">
   <div class="card">
     <h3>سيناريوهات العرض</h3>
@@ -19,7 +19,7 @@
       <li>اكتشاف شريك استراتيجي من شركات الاتصالات والطاقة والبتروكيماويات والمصارف المدرجة.</li>
       <li>فتح مقارنة تفصيلية ومراجعة الفرص والمخاطر.</li>
       <li>مراجعة التقارير المحفوظة ونتائج المقارنات.</li>
-      <li>لوحة مراقبة النظام ومحاكاة تعثر خدمة الذكاء الاصطناعي.</li>
+      {% if logged_in_user.role == 'admin' %}<li>لوحة مراقبة النظام ومحاكاة تعثر خدمة الذكاء الاصطناعي.</li>{% endif %}
     </ol>
     <a class="btn" href="{{ url_for('main.discover') }}">ابدأ الاكتشاف</a>
     <a class="btn secondary" href="{{ url_for('main.compare') }}">قارن شركتين</a>

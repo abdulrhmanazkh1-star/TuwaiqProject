@@ -8,8 +8,10 @@ def create_app(config_object=None):
     app.config.from_object(config_object or Config)
     db.init_app(app)
 
+    from app.auth import auth_bp, bootstrap_admin
     from app.views import bp as main_bp
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
 
     with app.app_context():
@@ -17,5 +19,6 @@ def create_app(config_object=None):
         from app.seed import seed_if_empty
 
         seed_if_empty()
+        bootstrap_admin()
 
     return app

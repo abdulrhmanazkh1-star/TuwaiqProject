@@ -12,6 +12,7 @@ from flask import (
     abort,
     current_app,
     flash,
+    g,
     redirect,
     render_template,
     request,
@@ -20,6 +21,7 @@ from flask import (
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.ai_engine import analyze_with_ai, llm_configured, summarize_relationship
+from app.auth import roles_required
 from app.kpis import add_actual, evaluate_target, investment_return_summary, refresh_alerts
 from app.models import (
     Analysis,
@@ -32,7 +34,7 @@ from app.models import (
     db,
 )
 from app.monitoring import dashboard_metrics, record_event
-from app.scoring import SCORING_VERSION, analyze_pair
+from app.scoring import SCORING_VERSION, analyze_pair, rank_candidates
 
 bp = Blueprint("main", __name__)
 
@@ -46,10 +48,11 @@ CRITERION_LABELS = {
     "business_complementarity": "تكامل الأنشطة التجارية",
     "product_compatibility": "توافق المنتجات والخدمات",
     "partnership_opportunity": "فرص التعاون",
-    "strategic_alignment": "التوافق الاستراتيجي",
+    "strategic_alignment": "المواءمة الاستراتيجية",
     "financial_capacity": "القدرة المالية",
     "operational_fit": "التوافق التشغيلي",
     "risk_control": "إدارة المخاطر",
+    "industry_relationship": "الارتباط بين القطاعات",
     "resource_complementarity": "تكامل الموارد",
     "operational_capability": "القدرات التشغيلية",
     "business_opportunity": "الفرصة التجارية",
@@ -86,7 +89,7 @@ def score_class(score):
 
 def analysis_status_text(analysis):
     if analysis.status == "failed":
-        return "تعذّر إكمال التحليل. راجع سجل الأخطاء في لوحة مراقبة النظام."
+        return "تعذّر إكمال التحليل حالياً. تحقق من البيانات وحاول مرة أخرى لاحقاً."
     if analysis.mode == "demo_rules":
         return f"اكتمل التحليل باستخدام قواعد التقييم التجريبية خلال {analysis.latency_ms} ملي ثانية."
     if analysis.mode == "hybrid":
@@ -110,7 +113,7 @@ def inject_globals():
 @bp.route("/")
 def home():
     companies = Company.query.order_by(Company.sector, Company.official_name).all()
-    metrics = dashboard_metrics()
+    metrics = dashboard_metrics() if g.logged_in_user.role == "admin" else None
     return render_template("home.html", companies=companies, metrics=metrics)
 
 
@@ -158,6 +161,7 @@ def removed_investment_analysis():
 
 
 @bp.route("/partnerships")
+@roles_required("admin")
 def partnerships():
     rels = BusinessRelationship.query.order_by(BusinessRelationship.created_at.desc()).all()
     companies = Company.query.order_by(Company.official_name).all()
@@ -165,6 +169,7 @@ def partnerships():
 
 
 @bp.route("/partnerships/create", methods=["POST"])
+@roles_required("admin")
 def create_partnership():
     try:
         status = request.form.get("status", "draft")
@@ -246,6 +251,7 @@ def create_partnership():
 
 
 @bp.route("/partnerships/<int:rel_id>", methods=["GET", "POST"])
+@roles_required("admin")
 def partnership_detail(rel_id):
     rel = BusinessRelationship.query.get_or_404(rel_id)
     if request.method == "POST":
@@ -295,12 +301,14 @@ def partnership_detail(rel_id):
 
 
 @bp.route("/system")
+@roles_required("admin")
 def system_monitor():
     metrics = dashboard_metrics()
     return render_template("system.html", metrics=metrics)
 
 
 @bp.route("/system/simulate", methods=["POST"])
+@roles_required("admin")
 def simulate():
     kind = request.form.get("kind")
     if kind == "ai_timeout":
@@ -442,11 +450,7 @@ def _run_discovery(a_id, analysis_type):
         flash("اختر شركة من السجل المحلي.", "err")
         return redirect(url_for("main.discover"))
     candidates = Company.query.filter(Company.id != company_a.id).all()
-    ranked = []
-    for cand in candidates:
-        payload = analyze_pair(company_a, cand, analysis_type)
-        ranked.append((payload.get("overall_score") or 0, payload.get("confidence") or 0, cand, payload))
-    ranked.sort(key=lambda x: x[0], reverse=True)
+    ranked = rank_candidates(company_a, candidates, analysis_type)
     top = ranked[:5]
     latency = int((time.time() - t0) * 1000)
     analysis = Analysis(
@@ -462,15 +466,15 @@ def _run_discovery(a_id, analysis_type):
     db.session.add(analysis)
     db.session.flush()
     recs = []
-    for i, (score, conf, cand, payload) in enumerate(top, start=1):
-        why = next((c["explanation"] for c in payload["criteria"] if c["score"]), "تكامل أولي من الصيغ الموثّقة.")
-        risks = "؛ ".join(payload.get("limitations") or [])
+    for i, (score, coverage, cand, payload) in enumerate(top, start=1):
+        why = payload["recommendation"] + " " + "؛ ".join(payload.get("strengths") or [])
+        risks = "؛ ".join((payload.get("risks") or []) + (payload.get("missing_information") or []))
         rec = Recommendation(
             analysis_id=analysis.id,
             candidate_company_id=cand.id,
             rank=i,
             overall_score=score,
-            confidence=conf,
+            confidence=payload["confidence"],
             why=why,
             risks=risks,
             limitations="الترتيب داخل السجل المحلي المُتحقق فقط، وليس كل شركات تداول.",

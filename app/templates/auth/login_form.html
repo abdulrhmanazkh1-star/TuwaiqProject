@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ 'دخول المدير' if role == 'admin' else 'دخول المستخدم' }} — مِشراك{% endblock %}
+{% block content %}
+<section class="auth-wrap auth-register">
+  <div class="card auth-card {{ 'admin-card' if role == 'admin' else '' }}">
+    <span class="demo-tag">{{ 'مساحة المدير' if role == 'admin' else 'مساحة المستخدم' }}</span>
+    <h2>{{ 'تسجيل دخول المدير' if role == 'admin' else 'تسجيل دخول المستخدم' }}</h2>
+    <p class="muted">{{ 'أدخل بيانات حساب المدير للوصول إلى أدوات الإدارة ومراقبة النظام.' if role == 'admin' else 'أدخل بيانات حسابك لمقارنة الشركات واكتشاف فرص التعاون.' }}</p>
+    <form class="stack" method="post">
+      <input type="hidden" name="next" value="{{ next_url }}">
+      <label>{{ 'اسم المدير' if role == 'admin' else 'اسم المستخدم' }}<input name="username" autocomplete="username" required></label>
+      <label>كلمة المرور<input type="password" name="password" autocomplete="current-password" required></label>
+      <button class="btn {{ 'gold' if role == 'admin' else '' }}" type="submit">{{ 'دخول المدير' if role == 'admin' else 'دخول المستخدم' }}</button>
+    </form>
+    {% if role == 'user' %}
+      <p class="auth-foot">ليس لديك حساب؟ <a href="{{ url_for('auth.register') }}">إنشاء حساب مستخدم</a></p>
+    {% else %}
+      <p class="auth-foot">مدير جديد؟ <a href="{{ url_for('auth.register_admin') }}">إنشاء حساب مدير</a></p>
+    {% endif %}
+    <p class="auth-foot">تريد الدخول بنوع حساب آخر؟ <a href="{{ url_for('auth.login') }}">العودة لاختيار نوع الدخول</a></p>
+  </div>
+</section>
+{% endblock %}

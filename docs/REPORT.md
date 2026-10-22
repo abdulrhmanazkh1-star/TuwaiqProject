@@ -1,8 +1,8 @@
 # Project 1 report — مِشراك (CompatibilityMatch AI)
 
 **Course:** AI Product Development and Monitoring  
-**Product:** مِشراك — Saudi Business Partnership & Investment Intelligence
-**Date:** 21 October 2026
+**Product:** مِشراك — منصة توافق الشركات واكتشاف فرص الشراكة
+**Date:** 22 October 2026
 
 ## 1. Problem and users
 
@@ -10,7 +10,7 @@ Saudi corporate strategy and finance teams need an early way to compare potentia
 
 ## 2. Product
 
-The Flask MVP supports company comparison across three relationship types, smart discovery from a local catalogue, a post-decision KPI monitor, and a separate technical system monitor. Its user journey is Discover → Analyze → Evaluate → Decide → Monitor → Improve.
+The Flask MVP supports deterministic company comparison for strategic partnerships and joint ventures, smart discovery from a local catalogue, a post-decision KPI monitor, and a separate technical system monitor. Role-based access supports regular users and administrators. Its user journey is Discover → Analyze → Evaluate → Decide → Monitor → Improve.
 
 ## 3. Data and provenance
 
@@ -28,11 +28,11 @@ AI-assisted work included initial scaffolding, templates, and documentation. Pro
 
 ## 5. Scoring and evaluation
 
-Three documented weight sets cover partnership, directional equity investment (A considers investing in B), and joint venture. Missing inputs are not fabricated; unavailable criteria are excluded and reduce confidence. Sector/product compatibility values are heuristic screening signals, not validated empirical predictions. The product does not advise buying shares or promise returns.
+Two documented weight sets cover partnership and joint venture. Version `cm-score-v2` normalizes Arabic and English activity descriptions, extracts capabilities with a reusable taxonomy, and scores capability complementarities, text overlap, industry relationships, operational fit, and risks. Financial capacity is scored only from verified, non-synthetic financial rows. Missing criteria are omitted from the weighted average, lowering evidence coverage. Identical available evidence can produce genuine ties; no score is randomized or adjusted by company name or symbol. These heuristic scores are not validated empirical predictions.
 
-Automated tests cover scoring, absent financials, investment direction, discovery, KPI direction, alerts, delayed milestones, monitoring events, Demo Mode, and API timeout simulation. Human factual support review template: `docs/AI_EVALUATION.md`.
+Automated tests cover scoring, absent financials, all 702 ordered pairs across the 27-company catalogue for both supported relationship types, every company as a discovery starting point, ranking/comparison consistency, new-company eligibility, KPI direction, alerts, delayed milestones, monitoring events, Demo Mode, and API timeout simulation. Human factual support review template: `docs/AI_EVALUATION.md`.
 
-**Executed 21 October 2026:** `pytest -q` → **21 passed**. Pytest also reported SQLAlchemy deprecation warnings for legacy `Query.get()` and `datetime.utcnow()` calls; these do not fail the tests. Live LLM output was not evaluated because no API key is configured.
+**Executed 22 October 2026:** `pytest -q -p no:cacheprovider` → **26 passed**. Existing SQLAlchemy deprecation warnings remain and do not fail the suite. Automated tests validate deterministic scoring and API handling; they do not establish real-world predictive accuracy. No live Gemini benchmark or human factual-claim review is claimed.
 
 ## 6. Business monitoring
 
@@ -52,8 +52,10 @@ Single-process Flask app and SQLite database. Business records and technical tel
 
 - No automatic Tadawul feed, price feed, or public-filings synchronization.
 - No financial ratios or investment valuation until official financial data is loaded.
-- Heuristic compatibility scores require domain validation and human review.
-- No user authentication or role-based access; this is a local academic MVP.
+- Heuristic compatibility scores require domain validation and human review. On the current catalogue snapshot, among 351 unordered company pairs the partnership scorecard yielded 104 distinct rounded scores, while the joint-venture scorecard yielded 105. Repeated summaries still create genuine ties.
+- The taxonomy and compatibility rules are heuristic and need review by subject-matter experts.
+- Company activity summaries are concise curated records rather than complete official filings.
+- The system still lacks automatic issuer-data synchronization and verified financial statements.
 - LLM factual quality requires human review and a configured API key.
 
-Future work: validated financial imports, stronger issuer-specific sources, an audited review dataset, authenticated access, and tested decision thresholds.
+Future work: validated financial imports, stronger issuer-specific sources, an audited review dataset, and tested decision thresholds.

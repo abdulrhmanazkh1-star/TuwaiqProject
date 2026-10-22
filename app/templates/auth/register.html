@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}إنشاء حساب — مِشراك{% endblock %}
+{% block content %}
+<section class="auth-wrap auth-register"><div class="card auth-card"><span class="demo-tag">حساب مستخدم</span><h2>إنشاء حساب جديد</h2><p class="muted">الحساب الجديد بصلاحية مستخدم، ولا يمنح صلاحيات المدير.</p>
+  <form class="stack" method="post"><label>اسم المستخدم<input name="username" minlength="3" maxlength="80" autocomplete="username" required></label><label>كلمة المرور<input type="password" name="password" minlength="8" autocomplete="new-password" required><small class="muted">8 أحرف على الأقل</small></label><button class="btn" type="submit">إنشاء الحساب</button></form>
+  <p class="auth-foot"><a href="{{ url_for('auth.login_user') }}">العودة لدخول المستخدم</a> · <a href="{{ url_for('auth.login_admin') }}">دخول المدير</a></p>
+</div></section>
+{% endblock %}

@@ -3,10 +3,10 @@
 {% block content %}
 <section class="hero">
   <h2>مرشحون لـ {{ company_a.official_name }}</h2>
-  <p class="muted">نوع التحليل: {{ analysis_labels.get(analysis_type) }} · الترتيب مبني على الشركات المسجلة في المنصة فقط.</p>
+  <p class="muted">نوع التحليل: {{ analysis_labels.get(analysis_type) }} · تمت مقارنة الشركة بكل الشركات الأخرى المسجلة. الترتيب حسب الدرجة، وتُرتب الدرجات المتساوية بالرمز لضمان نتيجة ثابتة.</p>
 </section>
 <table>
-  <thead><tr><th>الترتيب</th><th>الشركة</th><th>الدرجة</th><th>سبب الترشيح</th><th>ملاحظات</th><th></th></tr></thead>
+  <thead><tr><th>الترتيب</th><th>الشركة</th><th>الدرجة</th><th>سبب الترشيح ونقاط القوة</th><th>المخاطر والبيانات الناقصة</th><th>تغطية البيانات</th><th></th></tr></thead>
   <tbody>
   {% for rec, cand, payload in ranked %}
     <tr>
@@ -15,6 +15,7 @@
       <td><span class="score-badge {{ score_class(rec.overall_score) }}">{{ rec.overall_score }}</span></td>
       <td>{{ rec.why }}</td>
       <td>{{ rec.limitations }}</td>
+      <td>{{ (payload.evidence_coverage * 100)|round|int }}٪</td>
       <td>
         <form method="post" action="{{ url_for('main.compare') }}">
           <input type="hidden" name="company_a" value="{{ company_a.id }}">

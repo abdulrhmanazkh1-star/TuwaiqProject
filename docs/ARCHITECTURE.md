@@ -6,7 +6,7 @@ CompatibilityMatch AI runs as one Flask application with SQLAlchemy and SQLite.
 
 - **UI:** Arabic RTL Jinja2 pages with Chart.js.
 - **HTTP:** routes in `app/views.py`.
-- **Scoring:** deterministic formulas and documented weights in `app/scoring.py` (`cm-score-v1`).
+- **Scoring:** deterministic formulas in `app/scoring_engine.py`, exposed through `app/scoring.py`, version `cm-score-v2`. A normalized Arabic/English activity profile and reusable capability taxonomy find overlaps and complementary capability pairs. The explicit industry-relation dimension carries 9–10% weight; profile and capability signals drive other dimensions. No company symbol/name offsets are used. Missing verified financials are excluded from the numeric average and reduce evidence coverage.
 - **AI narrative:** `app/ai_engine.py`, OpenAI-compatible API or labeled deterministic Demo Mode.
 - **Business KPI calculations:** `app/kpis.py`.
 - **Technical telemetry:** `app/monitoring.py` writes application events and calculates dashboard metrics.
@@ -26,7 +26,31 @@ Potential primary data sources include Saudi Exchange company announcements and 
 
 ## Scoring and limitations
 
-The three analysis modes use separate weights. Missing financial values stay missing; weights are normalized over available criteria and confidence is reduced. LLM narratives cannot modify numeric scores. Sector/product scores are preliminary heuristics, not an empirical prediction model. No compatibility score alone constitutes a purchase recommendation.
+Strategic partnership and joint venture each have a separate weight set in `app/scoring_engine.py`:
+
+| Strategic partnership criterion | Weight |
+| --- | ---: |
+| Business complementarity | 20% |
+| Product compatibility | 17% |
+| Partnership opportunity | 15% |
+| Strategic alignment | 14% |
+| Operational fit | 10% |
+| Industry relationship | 9% |
+| Risk control | 10% |
+| Financial capacity | 5% |
+
+| Joint venture criterion | Weight |
+| --- | ---: |
+| Resource complementarity | 20% |
+| Operational capability | 15% |
+| Business opportunity | 15% |
+| Strategic alignment | 12% |
+| Industry relationship | 10% |
+| Project feasibility | 13% |
+| Implementation risk | 10% |
+| Financial capacity | 5% |
+
+Capability taxonomy links describe plausible value-chain fit (for example, connectivity with banking or drilling with energy); these are explicit hypotheses, not evidence of an existing contract. Text overlap can indicate operational familiarity and competitive risk, so both fit and risk dimensions are shown. Unlisted sector relationships are neutral rather than penalized. Missing/synthetic financial rows are never treated as verified facts; unavailable criteria are omitted and the UI shows evidence coverage and limitations. Gemini can explain supplied facts and calculated scores but cannot alter them. These heuristics are not an empirically validated prediction model, and scores are not investment recommendations. Identical evidence can yield genuine ties; stable discovery tie order uses the company symbol. On the 27-company catalogue snapshot, the 351 unordered pairs produced 104 distinct rounded partnership scores and 105 distinct rounded joint-venture scores; repeated generic issuer summaries still create ties, so this is a useful prototype range, not proof of predictive accuracy.
 
 ## Relationships
 

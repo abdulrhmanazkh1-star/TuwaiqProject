@@ -17,6 +17,6 @@ def test_demo_mode_not_claiming_live_ai():
 
     a, b = C(), C()
     b.official_name = "B"
-    out = _demo_narrative(a, b, "partnership", {"overall_score": 70, "scoring_version": "cm-score-v1", "limitations": []})
+    out = _demo_narrative(a, b, "partnership", {"overall_score": 70, "scoring_version": "cm-score-v2", "limitations": []})
     assert out["demo_mode"] is True
     assert "حي" in out["evidence_summary"] or "Demo" in out["evidence_summary"] or "حتمية" in out["evidence_summary"]

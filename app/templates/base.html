@@ -13,23 +13,29 @@
   <header class="app-header">
     <div class="brand">
       <div class="logo-mark" aria-hidden="true">
-        <svg viewBox="0 0 48 48" focusable="false"><path d="M9 26.5 19.5 16l7 7L39 10.5"/><path d="M29.5 10.5H39V20"/><circle cx="11" cy="36" r="4"/><circle cx="24" cy="36" r="4"/><circle cx="37" cy="36" r="4"/></svg>
+        <svg viewBox="0 0 48 48" focusable="false" aria-label="ترابط الشركات"><path d="M7 15h12v24H7zM29 9h12v30H29z"/><path d="M19 25h10M19 25l-4-4M19 25l-4 4M29 25l4-4M29 25l4 4"/><path d="M11 20h4M11 26h4M33 16h4M33 22h4M33 28h4"/></svg>
       </div>
       <div>
         <h1>مِشراك | ذكاء الشراكات</h1>
-        <p>تحليل فرص التعاون والاستثمار بين الشركات السعودية</p>
+        <p>ترابط الشركات السعودية وتحليل فرص الشراكة</p>
       </div>
     </div>
     <nav class="nav">
+      {% if logged_in_user %}
       <a href="{{ url_for('main.home') }}">الرئيسية</a>
       <a href="{{ url_for('main.compare') }}">مقارنة الشركات</a>
       <a href="{{ url_for('main.discover') }}">الاكتشاف الذكي</a>
+      {% if logged_in_user.role == 'admin' %}
+      <a href="{{ url_for('main.partnerships') }}">مراقبة الشراكات</a>
       <a href="{{ url_for('main.system_monitor') }}">مراقبة النظام</a>
+      {% endif %}
       <a href="{{ url_for('main.reports') }}">التقارير</a>
+      {% endif %}
     </nav>
-    <span class="mode-pill">
+    {% if logged_in_user %}<div class="account-area"><span class="account-name">{{ logged_in_user.username }} · {{ 'مدير' if logged_in_user.role == 'admin' else 'مستخدم' }}</span><form method="post" action="{{ url_for('auth.logout') }}"><button class="logout-btn" type="submit">خروج</button></form></div>{% else %}<a class="login-link" href="{{ url_for('auth.login') }}">تسجيل الدخول</a>{% endif %}
+    {% if logged_in_user %}<span class="mode-pill">
       {% if llm_mode == 'llm' %}تحليل بمساعدة الذكاء الاصطناعي{% else %}وضع تجريبي — تحليل آلي بقواعد ثابتة{% endif %}
-    </span>
+    </span>{% endif %}
   </header>
   <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
