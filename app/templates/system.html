@@ -82,11 +82,13 @@
 </div>
 <script>
 const types = {{ metrics.by_type | tojson }};
+const typeLabels = {analysis:'تحليل شركات',ai_analysis:'تحليل الشركات',ai_demo:'شرح تجريبي',fault_simulation:'محاكاة عطل',analysis_failed:'تعذّر التحليل',ai_timeout:'انتهاء مهلة الذكاء الاصطناعي',missing_company:'بيانات شركة ناقصة',delayed_analysis:'تحليل متأخر',validation_failure:'تعذّر التحقق من البيانات'};
+const chartTypes = types.filter(t => t.type !== 'gemini_api_request' && typeLabels[t.type]);
 new Chart(document.getElementById('typeChart'), {
   type: 'bar',
   data: {
-    labels: types.map(t => ({analysis:'تحليل شركات',ai_analysis:'تحليل الشركات',ai_demo:'شرح تجريبي',gemini_api_request:'طلب Gemini حقيقي',fault_simulation:'محاكاة عطل',analysis_failed:'تعذّر التحليل',ai_timeout:'انتهاء مهلة الذكاء الاصطناعي',missing_company:'بيانات شركة ناقصة',delayed_analysis:'تحليل متأخر',validation_failure:'تعذّر التحقق من البيانات'}[t.type] || 'حدث آخر')),
-    datasets: [{ label: 'عدد', data: types.map(t => t.count), backgroundColor: '#1b4f8a' }]
+    labels: chartTypes.map(t => typeLabels[t.type]),
+    datasets: [{ label: 'عدد', data: chartTypes.map(t => t.count), backgroundColor: '#1b4f8a' }]
   },
   options: { plugins: { legend: { display: false } } }
 });
