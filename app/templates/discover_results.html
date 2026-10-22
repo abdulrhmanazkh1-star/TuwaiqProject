@@ -1,31 +1,29 @@
 {% extends "base.html" %}
-{% block title %}نتائج الاكتشاف{% endblock %}
+{% block title %}نتائج الاكتشاف — مِشراك{% endblock %}
 {% block content %}
-<section class="hero">
-  <h2>مرشحون لـ {{ company_a.official_name }}</h2>
-  <p class="muted">نوع التحليل: {{ analysis_labels.get(analysis_type) }} · تمت مقارنة الشركة بكل الشركات الأخرى المسجلة. الترتيب حسب الدرجة، وتُرتب الدرجات المتساوية بالرمز لضمان نتيجة ثابتة.</p>
+<section class="results-hero">
+  <div><span class="eyebrow">نتيجة الاكتشاف · {{ analysis_labels.get(analysis_type) }}</span><h2>مرشحون محتملون لـ<br><span>{{ company_a.official_name }}</span></h2><p>رتبنا {{ analysis.company_a.sector }} وغيرها من القطاعات في السجل وفق معايير العلاقة المختارة.</p></div>
+  <div class="results-count"><b>{{ ranked|length }}</b><span>مرشحين للعرض</span><small>من {{ analysis.company_a.official_name }}</small></div>
 </section>
-<table>
-  <thead><tr><th>الترتيب</th><th>الشركة</th><th>الدرجة</th><th>سبب الترشيح ونقاط القوة</th><th>المخاطر والبيانات الناقصة</th><th>تغطية البيانات</th><th></th></tr></thead>
-  <tbody>
-  {% for rec, cand, payload in ranked %}
-    <tr>
-      <td>{{ rec.rank }}</td>
-      <td>{{ cand.official_name }} <span class="tag navy">{{ cand.symbol }}</span><br><small>{{ cand.sector }}</small></td>
-      <td><span class="score-badge {{ score_class(rec.overall_score) }}">{{ rec.overall_score }}</span></td>
-      <td>{{ rec.why }}</td>
-      <td>{{ rec.limitations }}</td>
-      <td>{{ (payload.evidence_coverage * 100)|round|int }}٪</td>
-      <td>
-        <form method="post" action="{{ url_for('main.compare') }}">
-          <input type="hidden" name="company_a" value="{{ company_a.id }}">
-          <input type="hidden" name="company_b" value="{{ cand.id }}">
-          <input type="hidden" name="analysis_type" value="{{ analysis_type }}">
-          <button class="btn secondary" type="submit">مقارنة تفصيلية</button>
-        </form>
-      </td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
+<div class="results-toolbar"><div><b>أفضل النتائج الأولية</b><span> الدرجة لا تثبت وجود اتفاق أو فرصة تجارية مؤكدة.</span></div><a class="btn secondary" href="{{ url_for('main.discover') }}">بحث جديد</a></div>
+<div class="candidate-list">
+{% for rec, cand, payload in ranked %}
+  <article class="candidate-card {{ 'candidate-top' if loop.first else '' }}">
+    <div class="candidate-rank"><span>{{ '%02d'|format(rec.rank) }}</span><small>{% if loop.first %}الأعلى ترتيباً{% else %}ترتيب مبدئي{% endif %}</small></div>
+    <div class="candidate-main">
+      <div class="candidate-title"><div><span class="company-symbol">{{ cand.symbol }}</span><span class="sector-pill">{{ cand.sector }}</span><h3>{{ cand.official_name }}</h3><small>{{ cand.subsector }}</small></div>
+        <div class="candidate-score"><b class="score-badge {{ score_class(rec.overall_score) }}">{{ rec.overall_score }}</b><span>من 100</span></div>
+      </div>
+      <div class="score-track {{ score_class(rec.overall_score) }}"><span style="width:{{ rec.overall_score }}%"></span></div>
+      <div class="candidate-facts">
+        <div><span class="fact-label">سبب الترشيح</span><p>{{ rec.why }}</p></div>
+        <div><span class="fact-label">ما يحتاج تحققاً</span><p>{{ rec.risks or 'لا توجد مخاطر محددة من البيانات الحالية؛ يلزم تحقق إضافي.' }}</p></div>
+      </div>
+      <div class="candidate-foot"><span>تغطية البيانات <b>{{ (payload.evidence_coverage * 100)|round|int }}٪</b></span><span>تقييم أولي من الملف التعريفي والسجل المحلي</span>
+        <form method="post" action="{{ url_for('main.compare') }}"><input type="hidden" name="company_a" value="{{ company_a.id }}"><input type="hidden" name="company_b" value="{{ cand.id }}"><input type="hidden" name="analysis_type" value="{{ analysis_type }}"><button class="btn secondary" type="submit">قارن بالتفصيل <span aria-hidden="true">←</span></button></form>
+      </div>
+    </div>
+  </article>
+{% endfor %}
+</div>
 {% endblock %}

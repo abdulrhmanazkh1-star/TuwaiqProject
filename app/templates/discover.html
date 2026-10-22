@@ -1,24 +1,58 @@
 {% extends "base.html" %}
-{% block title %}الاكتشاف الذكي{% endblock %}
+{% block title %}الاكتشاف الذكي — مِشراك{% endblock %}
 {% block content %}
-<div class="card">
-  <h2>اكتشاف شركات مرشّحة</h2>
-  <p class="muted">يُقيَّم المرشحون من السجل المحلي فقط بنفس منطق المقارنة. الترتيب أولي وليس تغطية لتداول كاملة.</p>
-  <form class="stack" method="post">
-    <label>شركتك
-      <select name="company_a">
-        {% for c in companies %}
-        <option value="{{ c.id }}" {% if c.symbol == '7010' %}selected{% endif %}>{{ c.official_name }} — {{ c.symbol }} · {{ c.sector }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>نوع التحليل
-      <select name="analysis_type">
-        <option value="partnership">شراكة استراتيجية</option>
-        <option value="joint_venture">مشروع مشترك</option>
-      </select>
-    </label>
-    <button class="btn" type="submit">ترتيب المرشحين</button>
-  </form>
+<section class="page-intro discover-intro">
+  <div><span class="eyebrow">اكتشاف من قاعدة الشركات</span><h2>من شركتك إلى مرشحين محتملين</h2><p>نرتب الشركات المسجلة باستخدام منطق التوافق نفسه المستخدم في المقارنة، لتبدأ من قائمة قصيرة قابلة للمراجعة.</p></div>
+  <div class="discovery-orbit" aria-hidden="true"><span>بحث</span><i>⌕</i><b>{{ companies|length }}</b></div>
+</section>
+<div class="discover-layout">
+  <section class="card discover-form-card">
+    <div class="section-title-row"><div><span class="eyebrow">إعداد البحث</span><h3>ما الفرصة التي تبحث عنها؟</h3></div><span class="form-step-badge">{{ companies|length }} شركة</span></div>
+    <form class="stack" method="post" id="discoverForm">
+      <label><span>الشركة التي تنطلق منها</span>
+        <select name="company_a" id="discoverCompany" required>
+          {% for c in companies %}<option value="{{ c.id }}" data-sector="{{ c.sector }}" data-symbol="{{ c.symbol }}" {% if c.symbol == '7010' %}selected{% endif %}>{{ c.official_name }} — {{ c.symbol }} · {{ c.sector }}</option>{% endfor %}
+        </select>
+        <small class="field-hint">اختر الشركة التي تريد البحث عن شركاء محتملين لها.</small>
+      </label>
+      <label><span>نوع العلاقة المراد استكشافها</span>
+        <select name="analysis_type" id="discoverType">
+          <option value="partnership">شراكة استراتيجية</option>
+          <option value="joint_venture">مشروع مشترك</option>
+        </select>
+      </label>
+      <div class="selected-company-card"><span class="preview-symbol" id="discoverSymbol">7010</span><div><small>الشركة المختارة · <span id="discoverSector">قطاع</span></small><b id="discoverName">شركة الاتصالات السعودية</b></div></div>
+      <div class="relationship-hint"><span class="hint-icon">⌕</span><p id="discoverTypeHint">سيُرتب المرشحون حسب تكامل الأنشطة والخدمات والمواءمة وفرص التعاون الأولية.</p></div>
+      <button class="btn compare-submit" type="submit">ابدأ ترتيب المرشحين <span aria-hidden="true">←</span></button>
+    </form>
+  </section>
+  <aside class="discover-side">
+    <section class="card discovery-guide">
+      <span class="eyebrow">كيف يعمل الاكتشاف؟</span><h3>قائمة أولية، لا قرار آلي</h3>
+      <div class="guide-item"><span>١</span><p><b>فحص المرشحين</b><small>كل شركة في السجل المحلي ما عدا الشركة المختارة.</small></p></div>
+      <div class="guide-item"><span>٢</span><p><b>تطبيق معايير العلاقة</b><small>نفس صيغة التقييم الرقمية في المقارنة المباشرة.</small></p></div>
+      <div class="guide-item"><span>٣</span><p><b>ترتيب أفضل خمسة</b><small>تظهر الدرجة والتكامل والمخاطر والقيود.</small></p></div>
+    </section>
+  </aside>
 </div>
+<section class="discover-benefits">
+  <div><span class="benefit-icon">⌗</span><b>مقاييس مختلفة للعلاقة</b><small>معايير الشراكة تختلف عن المشروع المشترك.</small></div>
+  <div><span class="benefit-icon">◉</span><b>ترتيب قابل للتفسير</b><small>كل نتيجة معها أسباب ونقاط نقص.</small></div>
+  <div><span class="benefit-icon">⇄</span><b>انتقال مباشر للمقارنة</b><small>افتح المرشح لتحليل الزوج بالتفصيل.</small></div>
+</section>
+<script>
+const discoverCompany = document.getElementById('discoverCompany');
+const updateDiscoverCompany = () => {
+  const option = discoverCompany.selectedOptions[0];
+  document.getElementById('discoverName').textContent = option.textContent.split(' — ')[0];
+  document.getElementById('discoverSymbol').textContent = option.dataset.symbol;
+  document.getElementById('discoverSector').textContent = option.dataset.sector;
+};
+discoverCompany.addEventListener('change', updateDiscoverCompany); updateDiscoverCompany();
+document.getElementById('discoverType').addEventListener('change', event => {
+  document.getElementById('discoverTypeHint').textContent = event.target.value === 'joint_venture'
+    ? 'سيُرتب المرشحون حسب تكامل الموارد والقدرات وجدوى المشروع ومخاطر التنفيذ الأولية.'
+    : 'سيُرتب المرشحون حسب تكامل الأنشطة والخدمات والمواءمة وفرص التعاون الأولية.';
+});
+</script>
 {% endblock %}

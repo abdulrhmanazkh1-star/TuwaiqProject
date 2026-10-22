@@ -1,32 +1,92 @@
 {% extends "base.html" %}
-{% block title %}مقارنة الشركات{% endblock %}
+{% block title %}مقارنة الشركات — مِشراك{% endblock %}
 {% block content %}
-<div class="card">
-  <h2>مقارنة شركتين</h2>
-  <p class="muted">اختر شركة أ، شركة ب، ونوع العلاقة. الدرجات تُحسب بالصيغ، ثم يُولَّد تقرير سردي.</p>
-  <form class="stack" method="post">
-    <label>الشركة أ
-      <select name="company_a" required>
-        {% for c in companies %}
-        <option value="{{ c.id }}">{{ c.official_name }} — {{ c.symbol }} ({{ c.sector }})</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>الشركة ب
-      <select name="company_b" required>
-        {% for c in companies %}
-        <option value="{{ c.id }}" {% if loop.index0 == 1 %}selected{% endif %}>{{ c.official_name }} — {{ c.symbol }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>نوع العلاقة
-      <select name="analysis_type">
-        <option value="partnership">شراكة استراتيجية</option>
-        <option value="joint_venture">مشروع مشترك</option>
-      </select>
-    </label>
-    <label><input type="checkbox" name="simulate" value="timeout"> محاكاة انتهاء مهلة AI (لاختبار المراقبة)</label>
-    <button class="btn" type="submit">بدء التحليل</button>
-  </form>
+<section class="page-intro compare-intro">
+  <div><span class="eyebrow">تحليل ثنائي · {{ companies|length }} شركة متاحة</span><h2>مقارنة الشركات</h2><p>اختر شركتين وحدد العلاقة التي تريد دراستها. ستظهر الدرجة ومعاييرها، ثم شرح الفرص والمخاطر والبيانات الناقصة.</p></div>
+  <div class="intro-art" aria-hidden="true"><span>أ</span><i>↔</i><span>ب</span></div>
+</section>
+
+<div class="compare-layout">
+  <section class="card compare-form-card">
+    <div class="section-title-row"><div><span class="eyebrow">بيانات المقارنة</span><h3>من الطرفان؟</h3></div><span class="form-step-badge">الخطوة ١ من ٣</span></div>
+    <form class="stack" method="post" id="compareForm">
+      <div class="company-pair-fields">
+        <label class="company-field"><span class="field-overline">الطرف الأول</span><span>الشركة أ</span>
+          <select name="company_a" id="companyA" required>
+            {% for c in companies %}<option value="{{ c.id }}" data-name="{{ c.official_name }}" data-symbol="{{ c.symbol }}" data-sector="{{ c.sector }}" data-activity="{{ c.products_services }}">{{ c.official_name }} — {{ c.symbol }}</option>{% endfor %}
+          </select>
+          <span class="field-hint">الجهة التي تبدأ منها المقارنة</span>
+        </label>
+        <label class="company-field"><span class="field-overline">الطرف الثاني</span><span>الشركة ب</span>
+          <select name="company_b" id="companyB" required>
+            {% for c in companies %}<option value="{{ c.id }}" data-name="{{ c.official_name }}" data-symbol="{{ c.symbol }}" data-sector="{{ c.sector }}" data-activity="{{ c.products_services }}" {% if loop.index0 == 1 %}selected{% endif %}>{{ c.official_name }} — {{ c.symbol }}</option>{% endfor %}
+          </select>
+          <span class="field-hint">الجهة المراد مقارنتها بالطرف الأول</span>
+        </label>
+      </div>
+      <div class="pair-preview" aria-live="polite">
+        <div class="preview-company"><span class="preview-symbol" id="previewSymbolA">—</span><div><b id="previewNameA">اختر الشركة أ</b><small id="previewSectorA">القطاع</small></div></div>
+        <span class="pair-link-icon">↔</span>
+        <div class="preview-company"><span class="preview-symbol preview-symbol-gold" id="previewSymbolB">—</span><div><b id="previewNameB">اختر الشركة ب</b><small id="previewSectorB">القطاع</small></div></div>
+      </div>
+      <label class="relationship-field"><span>نوع العلاقة</span>
+        <select name="analysis_type" id="analysisType">
+          <option value="partnership">شراكة استراتيجية</option>
+          <option value="joint_venture">مشروع مشترك</option>
+        </select>
+      </label>
+      <div class="selected-criteria" id="criteriaList">
+        <span class="criteria-heading">معايير الشراكة الاستراتيجية</span>
+        <span>تكامل الأنشطة</span><span>توافق المنتجات</span><span>فرص التعاون</span><span>المواءمة</span><span>التوافق التشغيلي</span><span>صلة القطاعات</span><span>المخاطر</span><span>القدرة المالية</span>
+      </div>
+      <button class="btn compare-submit" type="submit">حلّل التوافق <span aria-hidden="true">←</span></button>
+    </form>
+  </section>
+
+  <aside class="compare-aside">
+    <section class="card aside-card">
+      <span class="aside-number">01</span><span class="eyebrow">ماذا ستشاهد؟</span><h3>نتيجة مفهومة خطوة بخطوة</h3>
+      <div class="result-preview-list">
+        <div><span class="result-preview-icon">％</span><p><b>درجة توافق</b><small>محسوبة بقواعد Python ثابتة.</small></p></div>
+        <div><span class="result-preview-icon">▤</span><p><b>معايير شفافة</b><small>درجة وتفسير ودليل لكل معيار.</small></p></div>
+        <div><span class="result-preview-icon">✦</span><p><b>فرص ومخاطر</b><small>شرح مساعد من البيانات المتاحة.</small></p></div>
+        <div><span class="result-preview-icon">ⓘ</span><p><b>قيود البيانات</b><small>نوضح ما لا يستطيع السجل تأكيده.</small></p></div>
+      </div>
+    </section>
+  </aside>
 </div>
+
+<section class="mini-process">
+  <div><span>١</span><b>اختر الشركتين</b><small>من الدليل المدرج</small></div><i>←</i>
+  <div><span>٢</span><b>حدد نوع العلاقة</b><small>شراكة أو مشروع مشترك</small></div><i>←</i>
+  <div><span>٣</span><b>راجع التقرير</b><small>درجة، فرص، مخاطر، قيود</small></div>
+</section>
+<script>
+const companyA = document.getElementById('companyA');
+const companyB = document.getElementById('companyB');
+const updatePair = () => {
+  const a = companyA.selectedOptions[0], b = companyB.selectedOptions[0];
+  document.getElementById('previewNameA').textContent = a.dataset.name;
+  document.getElementById('previewNameB').textContent = b.dataset.name;
+  document.getElementById('previewSymbolA').textContent = a.dataset.symbol;
+  document.getElementById('previewSymbolB').textContent = b.dataset.symbol;
+  document.getElementById('previewSectorA').textContent = a.dataset.sector;
+  document.getElementById('previewSectorB').textContent = b.dataset.sector;
+  const same = a.value === b.value;
+  companyB.setCustomValidity(same ? 'اختر شركتين مختلفتين لإجراء المقارنة.' : '');
+  document.querySelector('.compare-submit').disabled = same;
+  document.querySelector('.pair-preview').classList.toggle('pair-invalid', same);
+};
+companyA.addEventListener('change', updatePair); companyB.addEventListener('change', updatePair); updatePair();
+const analysisType = document.getElementById('analysisType');
+const criteria = document.getElementById('criteriaList');
+const relationshipCopy = {
+  partnership: {title:'معايير الشراكة الاستراتيجية', items:['تكامل الأنشطة','توافق المنتجات','فرص التعاون','المواءمة','التوافق التشغيلي','صلة القطاعات','المخاطر','القدرة المالية']},
+  joint_venture: {title:'معايير المشروع المشترك', items:['تكامل الموارد','القدرات التشغيلية','فرص الأعمال','المواءمة','صلة القطاعات','جدوى المشروع','مخاطر التنفيذ','القدرة المالية']}
+};
+analysisType.addEventListener('change', () => {
+  const config = relationshipCopy[analysisType.value];
+  criteria.innerHTML = `<span class="criteria-heading">${config.title}</span>` + config.items.map(item => `<span>${item}</span>`).join('');
+});
+</script>
 {% endblock %}

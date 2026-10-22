@@ -1,18 +1,15 @@
 {% extends "base.html" %}
 {% block title %}تقرير التحليل{% endblock %}
 {% block content %}
-<section class="hero">
-  <span class="tag navy">{{ analysis_labels.get(analysis.analysis_type, analysis.analysis_type) }}</span>
-  {% if analysis.company_a.is_synthetic or (analysis.company_b and analysis.company_b.is_synthetic) %}
-  <span class="demo-tag">بيانات تجريبية</span>
-  {% endif %}
-  <h2>{{ analysis.company_a.official_name }}
-    {% if analysis.company_b %} ← {{ analysis.company_b.official_name }}{% endif %}
-  </h2>
-  <p class="muted">{{ analysis_status_text(analysis) }}</p>
-  <p class="score-ring {{ score_class(report.scores.overall_score if report.scores else none) }}">{{ report.scores.overall_score if report.scores else '—' }} من 100</p>
-  {% if report.scores %}<p>تغطية المعلومات المستخدمة: {{ (report.scores.evidence_coverage * 100)|round|int }}٪</p><p class="muted">{{ report.scores.recommendation }}</p>{% endif %}
+<section class="analysis-hero">
+  <div class="analysis-title"><span class="eyebrow">{{ analysis_labels.get(analysis.analysis_type, analysis.analysis_type) }} · تقرير رقم {{ analysis.id }}</span>
+    <h2>{{ analysis.company_a.official_name }} <span>↔</span> {% if analysis.company_b %}{{ analysis.company_b.official_name }}{% else %}مرشحون محتملون{% endif %}</h2>
+    <p>{{ analysis_status_text(analysis) }}</p>
+    <div class="analysis-tags">{% if analysis.company_a.is_synthetic or (analysis.company_b and analysis.company_b.is_synthetic) %}<span class="tag warn">بيانات تجريبية</span>{% endif %}</div>
+  </div>
+  <div class="analysis-score-panel"><span>درجة التوافق</span><b class="{{ score_class(report.scores.overall_score if report.scores else none) }}">{{ report.scores.overall_score if report.scores else '—' }}</b><small>من 100 · لا تمثل توصية استثمارية</small><div class="score-track {{ score_class(report.scores.overall_score if report.scores else none) }}"><span style="width:{{ report.scores.overall_score if report.scores else 0 }}%"></span></div></div>
 </section>
+{% if report.scores %}<section class="analysis-stat-row"><article><small>تغطية المعلومات</small><b>{{ (report.scores.evidence_coverage * 100)|round|int }}٪</b></article><article><small>المعايير المحتسبة</small><b>{{ report.scores.criteria|length }}</b></article><article><small>زمن التحليل</small><b>{{ analysis.latency_ms }} <small>مللي ثانية</small></b></article></section>{% endif %}
 <div class="grid grid-2">
   <div class="card">
     <h3>معايير الشفافية</h3>
@@ -33,15 +30,16 @@
       {% if report.narrative and report.narrative.demo_mode %}<span class="demo-tag">وضع التجربة</span>{% endif %}
     </h3>
     {% set n = report.narrative or {} %}
-    <p><b>حقائق مقابل تفسير:</b></p>
-    <ul>
-      {% for f in (n.facts_vs_interpretation.facts if n.facts_vs_interpretation else []) %}<li>{{ f }}</li>{% endfor %}
-    </ul>
-    <p><b>فرص:</b></p><ul>{% for x in n.opportunities or [] %}<li>{{ x }}</li>{% endfor %}</ul>
-    <p><b>مخاطر:</b></p><ul>{% for x in n.risks or [] %}<li>{{ x }}</li>{% endfor %}</ul>
-    <p><b>ملخص الدليل:</b> {{ n.evidence_summary }}</p>
-    <p><b>قيود:</b></p>
-    <ul>{% for x in (report.scores.limitations if report.scores else []) %}<li>{{ x }}</li>{% endfor %}</ul>
+    {% if n.facts_vs_interpretation and (n.facts_vs_interpretation.facts or n.facts_vs_interpretation.interpretation) %}
+    <div class="fact-note"><b>ما تدعمه البيانات:</b>{% for f in n.facts_vs_interpretation.facts or [] %}<p>{{ f }}</p>{% endfor %}{% for f in n.facts_vs_interpretation.interpretation or [] %}<p>{{ f }}</p>{% endfor %}</div>
+    {% endif %}
+    <div class="narrative-section"><h4>فرص محتملة</h4>{% if n.opportunities %}<ul>{% for x in n.opportunities %}<li>{{ x }}</li>{% endfor %}</ul>{% else %}<p class="muted">لم تُسجّل فرص محددة من المعلومات الحالية.</p>{% endif %}</div>
+    <div class="narrative-section risk-section"><h4>مخاطر تستدعي التحقق</h4>{% if n.risks %}<ul>{% for x in n.risks %}<li>{{ x }}</li>{% endfor %}</ul>{% else %}<p class="muted">لم تُسجّل مخاطر محددة من المعلومات الحالية.</p>{% endif %}</div>
+    {% if n.evidence_summary %}<div class="evidence-summary"><b>ملخص الأدلة</b><p>{{ n.evidence_summary }}</p></div>{% endif %}
+    <div class="narrative-section limitations-section"><h4>قيود يجب تذكرها</h4>
+      {% set limitations = report.scores.limitations if report.scores else [] %}
+      {% if limitations or n.caveats %}<ul>{% for x in limitations %}<li>{{ x }}</li>{% endfor %}{% for x in n.caveats or [] %}{% if x not in limitations %}<li>{{ x }}</li>{% endif %}{% endfor %}</ul>{% else %}<p class="muted">لا توجد قيود إضافية مسجلة.</p>{% endif %}
+    </div>
   </div>
 </div>
 {% if analysis.company_a.sources or (analysis.company_b and analysis.company_b.sources) %}

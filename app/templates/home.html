@@ -1,55 +1,123 @@
 {% extends "base.html" %}
 {% block title %}الرئيسية — مِشراك{% endblock %}
 {% block content %}
-<section class="hero">
-  <div class="hero-brand"><span class="hero-symbol" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M6 15h13v25H6zM29 9h13v31H29z"/><path d="M19 26h10m-6-4 4 4-4 4m7-8-4 4 4 4"/></svg></span><div><span class="demo-tag">مشروع أكاديمي</span><h2>مِشراك</h2></div></div>
-  <h2>اكتشف فرص التعاون بين الشركات السعودية.</h2>
-  <p class="muted">منصة تساعدك على مقارنة الشركات وفهم فرص الشراكة ومخاطرها من خلال تحليل واضح.</p>
-  <p class="muted">السجل يحتوي {{ companies|length }} شركة مساهمة مدرجة في السوق الرئيسية، مع أسماء ورموز مرجعية من دليل تداول السعودية. أوصاف الأنشطة مختصرة، والبيانات المالية غير مستوردة.</p>
+<section class="home-hero">
+  <div class="home-hero-copy">
+    <span class="eyebrow"><span class="live-dot"></span> منصة تحليل فرص التعاون السعودية</span>
+    <h2>حوّل بيانات الشركات<br><span>إلى فرص تعاون أوضح.</span></h2>
+    <p>قارن بين الشركات المدرجة، افهم نقاط التكامل والمخاطر، واكتشف مرشحين محتملين من سجل موثق وواضح الحدود.</p>
+    <div class="hero-actions">
+      <a class="btn" href="{{ url_for('main.discover') }}">اكتشف شركاء محتملين <span aria-hidden="true">←</span></a>
+      <a class="btn secondary" href="{{ url_for('main.compare') }}">ابدأ مقارنة</a>
+    </div>
+    <div class="hero-footnote"><span>✓</span> الدرجات تحسب بقواعد Python ثابتة <span>·</span> والشرح الذكي منفصل عنها</div>
+  </div>
+  <div class="home-hero-art" aria-hidden="true">
+    <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+    <div class="orbit-node node-a">شركة</div><div class="orbit-node node-b">فرصة</div><div class="orbit-node node-c">شركة</div>
+    <div class="orbit-center"><svg viewBox="0 0 48 48"><path d="M6 15h13v25H6zM29 9h13v31H29z"/><path d="M19 26h10m-6-4 4 4-4 4m7-8-4 4 4 4"/></svg></div>
+    <span class="art-caption">مِشراك · ذكاء الشراكات</span>
+  </div>
 </section>
-{% if logged_in_user.role == 'admin' %}<div class="grid grid-3">
-  <div class="metric"><div class="label">التحليلات والأحداث المسجلة</div><b>{{ metrics.total }}</b></div>
-  <div class="metric"><div class="label">نسبة الأخطاء التقنية</div><b>{{ metrics.error_rate }}%</b></div>
-  <div class="metric"><div class="label">متوسط زمن الاستجابة</div><b>{{ metrics.avg_latency_ms }} ملي ثانية</b></div>
-</div>{% endif %}
-<div class="grid grid-2" style="margin-top:16px">
-  <div class="card">
-    <h3>سيناريوهات العرض</h3>
-    <ol>
-      <li>اكتشاف شريك استراتيجي من شركات الاتصالات والطاقة والبتروكيماويات والمصارف المدرجة.</li>
-      <li>فتح مقارنة تفصيلية ومراجعة الفرص والمخاطر.</li>
-      <li>مراجعة التقارير المحفوظة ونتائج المقارنات.</li>
-      {% if logged_in_user.role == 'admin' %}<li>لوحة مراقبة النظام ومحاكاة تعثر خدمة الذكاء الاصطناعي.</li>{% endif %}
-    </ol>
-    <a class="btn" href="{{ url_for('main.discover') }}">ابدأ الاكتشاف</a>
-    <a class="btn secondary" href="{{ url_for('main.compare') }}">قارن شركتين</a>
+
+<section class="overview-strip" aria-label="ملخص المنصة">
+  <article class="overview-item"><span class="overview-icon">▦</span><div><b>{{ companies|length }}</b><span>شركة مدرجة في نسخة العرض</span></div></article>
+  <article class="overview-item"><span class="overview-icon">⌘</span><div><b>{{ sector_count }}</b><span>قطاعات ممثلة في السجل</span></div></article>
+  <article class="overview-item"><span class="overview-icon">⇄</span><div><b>2</b><span>نوعا علاقة للتحليل</span></div></article>
+  <article class="overview-item"><span class="overview-icon">◷</span><div><b>{{ recent_analyses|length }}</b><span>تحليلات حديثة في السجل</span></div></article>
+</section>
+
+<section class="section-heading">
+  <div><span class="eyebrow">ابدأ من هنا</span><h2>كل ما تحتاجه لاتخاذ خطوة مدروسة</h2><p class="muted">اختر المسار المناسب؛ ستجد تفاصيل الطريقة والقيود في كل خطوة.</p></div>
+</section>
+<section class="feature-grid">
+  <a class="feature-card feature-blue" href="{{ url_for('main.compare') }}">
+    <span class="feature-icon">⇄</span><span class="feature-step">01 · مقارنة مباشرة</span>
+    <h3>قارن شركتين</h3><p>اختر الشركتين ونوع العلاقة، ثم راجع درجة التوافق ومعاييرها والفرص والمخاطر.</p>
+    <span class="feature-link">اختيار الشركات <b>←</b></span>
+  </a>
+  <a class="feature-card feature-gold" href="{{ url_for('main.discover') }}">
+    <span class="feature-icon">⌕</span><span class="feature-step">02 · اكتشاف مرشحين</span>
+    <h3>اعثر على فرص محتملة</h3><p>رتّب الشركات المسجلة حسب تكامل الأنشطة والقدرات في شراكة أو مشروع مشترك.</p>
+    <span class="feature-link">استكشاف المرشحين <b>←</b></span>
+  </a>
+  <a class="feature-card feature-slate" href="{{ url_for('main.reports') }}">
+    <span class="feature-icon">▤</span><span class="feature-step">03 · متابعة النتائج</span>
+    <h3>ارجع إلى تقاريرك</h3><p>افتح التحليلات المحفوظة لمراجعة الدرجات والتفسيرات والقيود ومصادر البيانات.</p>
+    <span class="feature-link">عرض التقارير <b>←</b></span>
+  </a>
+</section>
+
+<section class="split-section">
+  <div class="card process-card">
+    <div class="section-title-row"><div><span class="eyebrow">طريقة العمل</span><h3>من الاختيار إلى تقرير واضح</h3></div><span class="section-index">4 خطوات</span></div>
+    <div class="process-list">
+      <div class="process-step"><span>١</span><div><b>حدد الشركة أو الشركتين</b><small>من دليل الشركات الموجود في المنصة.</small></div></div>
+      <div class="process-step"><span>٢</span><div><b>اختر نوع العلاقة</b><small>شراكة استراتيجية أو مشروع مشترك.</small></div></div>
+      <div class="process-step"><span>٣</span><div><b>راجع المعايير والدرجة</b><small>نتيجة قابلة للتفسير، والبيانات الناقصة موضحة.</small></div></div>
+      <div class="process-step"><span>٤</span><div><b>اقرأ الفرص والمخاطر</b><small>شرح مساعد لا يستبدل التحقق أو المشورة المهنية.</small></div></div>
+    </div>
   </div>
-  <div class="card">
-    <h3>حدود المنتج</h3>
-    <ul>
-      <li>لا يَعد بعوائد مستقبلية ولا يستبدل المشورة المهنية.</li>
-      <li>مؤشرات تنفيذ الشراكة تُدخل يدوياً أو عبر CSV لأن الإفصاح العام لا يكشف تفاصيل العقود الخاصة.</li>
-      <li>سجل الشركات وأرقامها حقيقية، بينما علاقة الشراكة وبيانات أدائها في المثال مُحاكاة.</li>
-      <li>المقارنة المالية لا تتوفر حتى استيراد قوائم مالية موثقة؛ لا تُعرض أرقام مالية مخمّنة.</li>
-    </ul>
+  <div class="card insight-card">
+    <span class="insight-mark">✦</span><span class="eyebrow">كيف نستخدم الذكاء الاصطناعي؟</span>
+    <h3>الدرجة من النظام، والشرح من Gemini عند تهيئته.</h3>
+    <p>محرك Python يحسب الأرقام بطريقة ثابتة. وعند ضبط Gemini، يساعد النموذج في صياغة تفسير عربي للبيانات والدرجات المتاحة. من دون مفتاح، يعمل الشرح التجريبي بوضوح.</p>
+    <div class="insight-tags"><span>درجات حتمية</span><span>شرح عربي</span><span>مصادر وحدود معلنة</span></div>
   </div>
-</div>
-<section class="card" style="margin-top:16px">
-  <h3>الشركات المدرجة في نسخة العرض</h3>
-  <p class="muted">الرموز وأسماء الجهات من <a href="https://www.saudiexchange.sa/wps/portal/saudiexchange/trading/participants-directory/issuer-directory?locale=en" target="_blank" rel="noopener">دليل المُصدرين في تداول السعودية</a>. التصنيف القطاعي والوصف مختصران لأغراض المقارنة الأولية.</p>
-  <table>
-    <thead><tr><th>الرمز</th><th>الشركة</th><th>القطاع</th><th>النشاط المختصر</th><th>المصدر</th></tr></thead>
-    <tbody>
-    {% for c in companies %}
-      <tr>
-        <td><b>{{ c.symbol }}</b></td>
-        <td>{{ c.official_name }}</td>
-        <td>{{ c.sector }}<br><small class="muted">{{ c.subsector }}</small></td>
-        <td>{{ c.products_services }}</td>
-        <td><a href="{{ c.source_url }}" target="_blank" rel="noopener">تداول</a></td>
-      </tr>
+</section>
+
+<section class="card recent-card">
+  <div class="section-title-row"><div><span class="eyebrow">سجل العمل</span><h3>آخر التحليلات</h3></div><a class="text-link" href="{{ url_for('main.reports') }}">كل التقارير ←</a></div>
+  {% if recent_analyses %}
+  <div class="recent-list">
+    {% for a in recent_analyses %}
+    <a class="recent-row" href="{{ url_for('main.analysis_detail', analysis_id=a.id) }}">
+      <span class="recent-type">{{ analysis_labels.get(a.analysis_type, a.analysis_type) }}</span>
+      <span class="recent-companies">{{ a.company_a.official_name if a.company_a else 'شركة' }} <b>↔</b> {{ a.company_b.official_name if a.company_b else 'مرشحون' }}</span>
+      <span class="recent-status {{ 'status-good' if a.status == 'completed' else 'status-muted' }}">{{ 'مكتمل' if a.status == 'completed' else 'غير مكتمل' }}</span>
+      <span class="recent-arrow">←</span>
+    </a>
     {% endfor %}
-    </tbody>
-  </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><span class="empty-icon">▤</span><b>لا توجد تحليلات محفوظة بعد</b><p>ابدأ بمقارنة أو اكتشاف شركة لتظهر النتائج هنا.</p><a href="{{ url_for('main.compare') }}" class="text-link">ابدأ أول مقارنة ←</a></div>
+  {% endif %}
 </section>
+
+<section class="catalog-section">
+  <div class="section-heading catalog-heading">
+    <div><span class="eyebrow">دليل نسخة العرض</span><h2>الشركات التي يمكنك تحليلها</h2><p class="muted">أسماء ورموز من دليل تداول السعودية. الأوصاف مختصرة، ولا تتوفر قوائم مالية موثقة داخل هذه النسخة.</p></div>
+    <label class="catalog-search"><span aria-hidden="true">⌕</span><input id="companySearch" type="search" placeholder="ابحث بالاسم أو الرمز أو القطاع" aria-label="ابحث في الشركات"></label>
+  </div>
+  <div class="catalog-meta"><span><b>{{ companies|length }}</b> شركة ضمن السجل المحلي</span><span>مصدر الأسماء: <a href="https://www.saudiexchange.sa/wps/portal/saudiexchange/trading/participants-directory/issuer-directory?locale=en" target="_blank" rel="noopener">دليل المُصدرين في تداول</a></span></div>
+  <div class="catalog-table-wrap">
+    <table class="catalog-table" id="companyTable">
+      <thead><tr><th>الشركة</th><th>القطاع</th><th>النشاط المختصر</th><th>المصدر</th></tr></thead>
+      <tbody>
+      {% for c in companies %}
+        <tr data-company-row>
+          <td><span class="company-symbol">{{ c.symbol }}</span><b>{{ c.official_name }}</b></td>
+          <td><span class="sector-pill">{{ c.sector }}</span><small class="muted">{{ c.subsector }}</small></td>
+          <td class="catalog-activity">{{ c.products_services }}</td>
+          <td><a class="source-link" href="{{ c.source_url }}" target="_blank" rel="noopener">تداول <span>↗</span></a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="empty-state hidden" id="noCompanyResults"><b>لم نجد شركة بهذا البحث</b><p>جرّب الاسم أو الرمز أو اسم القطاع.</p></div>
+  </div>
+</section>
+<script>
+const companySearch = document.getElementById('companySearch');
+companySearch?.addEventListener('input', () => {
+  const query = companySearch.value.trim().toLocaleLowerCase('ar');
+  let visible = 0;
+  document.querySelectorAll('[data-company-row]').forEach(row => {
+    const match = row.textContent.toLocaleLowerCase('ar').includes(query);
+    row.hidden = !match;
+    if (match) visible++;
+  });
+  document.getElementById('noCompanyResults').classList.toggle('hidden', visible !== 0);
+});
+</script>
 {% endblock %}

@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 {% block title %}مراقبة النظام{% endblock %}
 {% block content %}
-<section class="hero">
-  <h2>لوحة مراقبة النظام التقنية</h2>
-  <p class="muted">الأرقام محسوبة من أحداث التطبيق الفعلية، وتعرض حالة التحليلات والخدمات التقنية.</p>
+<section class="page-intro system-intro">
+  <div><span class="eyebrow">لوحة الإدارة · مؤشرات تقنية</span><h2>مراقبة النظام</h2><p>هنا تتابع استخدام التطبيق والأخطاء خلال آخر أسبوعين. وفي قسم Gemini تظهر الطلبات التي وصلت للخدمة فعلياً، منفصلة عن التجربة والمحاكاة.</p></div>
 </section>
 <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <symbol id="icon-events" viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M10 12h6M10 16h6"/></symbol>
@@ -19,20 +18,21 @@
 </svg>
 <div class="grid grid-3">
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-events"/></svg></span>إجمالي الأحداث</div><b>{{ metrics.total }}</b></div>
-  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-complete"/></svg></span>تحليلات مكتملة</div><b>{{ metrics.completed }}</b></div>
-  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-failed"/></svg></span>عمليات تعذّر إكمالها</div><b>{{ metrics.failed }}</b></div>
+  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-complete"/></svg></span>عمليات ناجحة</div><b>{{ metrics.completed }}</b></div>
+  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-failed"/></svg></span>عمليات فاشلة</div><b>{{ metrics.failed }}</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-errors"/></svg></span>نسبة الأخطاء</div><b>{{ metrics.error_rate }}٪</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-latency"/></svg></span>متوسط زمن المعالجة</div><b>{{ metrics.avg_latency_ms }} ملي ثانية</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-ai"/></svg></span>أخطاء الذكاء الاصطناعي</div><b>{{ metrics.ai_failures }}</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-validation"/></svg></span>أخطاء التحقق من البيانات</div><b>{{ metrics.validation_failures }}</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-freshness"/></svg></span>عمر أحدث بيانات (دقائق)</div><b>{{ metrics.freshness_minutes if metrics.freshness_minutes is not none else '—' }}</b></div>
-  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-usage"/></svg></span>وحدات الاستخدام (إدخال/إخراج)</div><b>{{ metrics.tokens_in }} / {{ metrics.tokens_out }}</b></div>
-  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-cost"/></svg></span>التكلفة التقديرية بالدولار</div><b>{{ metrics.estimated_cost_usd }}</b></div>
+  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-usage"/></svg></span>رموز Gemini المسجلة (إدخال/إخراج)</div><b>{{ metrics.tokens_in if metrics.tokens_in is not none else '—' }} / {{ metrics.tokens_out if metrics.tokens_out is not none else '—' }}</b></div>
+  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-cost"/></svg></span>تكلفة Gemini التقديرية (USD)</div><b>{{ metrics.estimated_cost_usd if metrics.estimated_cost_usd is not none else '—' }}</b></div>
 </div>
 <section class="card" style="margin-top:16px">
-  <h3>مراقبة Gemini API</h3>
-  <p class="muted">تعرض هذه المؤشرات طلبات Gemini الحقيقية فقط. الوضع التجريبي ومحاكاة الأعطال لا تدخل ضمنها. الحالة: <strong>{{ gemini.status }}</strong> — {{ gemini.reason }}</p>
-  <p class="muted">النموذج: {{ gemini.model }} · آخر طلب: {{ gemini.last_request_at or 'لم يُسجل طلب' }}</p>
+  <div class="section-title-row"><div><span class="eyebrow">مؤشرات المزود</span><h3>مراقبة Gemini API</h3></div><span class="form-step-badge">{{ gemini.model }}</span></div>
+  {% set gemini_status_ar = {'Not Configured':'غير مهيأ','Not Tested':'لم يُختبر بعد','Healthy':'يعمل جيداً','Degraded':'يحتاج إلى متابعة','Unavailable':'غير متاح'} %}
+  <p class="muted">الحالة: <strong>{{ gemini_status_ar.get(gemini.status, 'غير معروفة') }}</strong>. تعرض هذه المؤشرات الطلبات الحقيقية فقط؛ ولا تحتسب التجربة أو محاكاة الأعطال.</p>
+  <p class="muted">النموذج: {{ gemini.model }} · آخر طلب: {{ gemini.last_request_at or 'لم يُسجل طلب' }}{% if gemini.total and gemini.reason %} · {{ {'Healthy':'آخر الطلبات ناجحة','Degraded':'ظهرت أخطاء في بعض الطلبات الحديثة','Unavailable':'تعذر إكمال آخر طلب بسبب الاتصال أو الإعدادات','Not Tested':'لا توجد طلبات فعلية مسجلة','Not Configured':'لم تتم إضافة إعدادات Gemini'} .get(gemini.status, '') }}{% endif %}</p>
   <div class="grid grid-3">
     <div class="metric"><div class="label">إجمالي طلبات API الحقيقية</div><b>{{ gemini.total }}</b></div>
     <div class="metric"><div class="label">طلبات ناجحة</div><b>{{ gemini.successful }}</b></div>
@@ -59,7 +59,15 @@
   </div>
   <div class="card">
     <h3>توزيع الأنواع</h3>
-    <canvas id="typeChart" height="140"></canvas>
+    <p class="muted chart-caption">عدد الأحداث المسجلة خلال آخر 14 يوماً. استُبعدت طلبات Gemini الحقيقية والأنواع غير المصنفة من هذا المخطط.</p>
+    {% set event_labels = {'analysis':'تحليل الشركات','ai_analysis':'الشرح والتحليل','ai_demo':'شرح تجريبي','fault_simulation':'محاكاة عطل','discovery':'اكتشاف المرشحين','validation_failure':'تعذّر التحقق من البيانات'} %}
+    {% set chart_max = namespace(value=1) %}
+    {% for item in metrics.by_type if item.type in event_labels %}{% set chart_max.value = [chart_max.value, item.count]|max %}{% endfor %}
+    <div class="event-bars" role="list">
+      {% for item in metrics.by_type if item.type in event_labels %}
+      <div class="event-bar-row" role="listitem"><div class="event-bar-label"><span>{{ event_labels[item.type] }}</span><b>{{ item.count }}</b></div><div class="event-bar-track" role="meter" aria-label="{{ event_labels[item.type] }}" aria-valuemin="0" aria-valuemax="{{ chart_max.value }}" aria-valuenow="{{ item.count }}"><span style="width:{{ ((item.count / chart_max.value) * 100)|round|int }}%"></span></div></div>
+      {% else %}<div class="empty-state"><span class="empty-icon">▤</span><b>لا توجد أحداث لعرضها في هذه الفترة</b><p>ستظهر الأنواع بعد استخدام المقارنة أو الاكتشاف.</p></div>{% endfor %}
+    </div>
   </div>
 </div>
 <div class="card" style="margin-top:16px">
@@ -70,7 +78,7 @@
     {% for e in metrics.recent %}
       <tr>
         <td>{{ e.created_at }}</td>
-        <td>{{ {'analysis':'تحليل شركات','ai_analysis':'تحليل الشركات','ai_demo':'شرح تجريبي بلا Gemini','gemini_api_request':'طلب Gemini حقيقي','fault_simulation':'محاكاة عطل','analysis_failed':'تعذّر التحليل','ai_timeout':'انتهاء مهلة الذكاء الاصطناعي','missing_company':'بيانات شركة ناقصة','delayed_analysis':'تحليل استغرق وقتاً أطول من المعتاد','validation_failure':'تعذّر التحقق من البيانات'}.get(e.event_type, 'حدث في النظام') }}</td>
+        <td>{{ {'analysis':'تحليل شركات','ai_analysis':'تحليل الشركات','ai_demo':'شرح تجريبي بلا Gemini','gemini_api_request':'طلب Gemini حقيقي','fault_simulation':'محاكاة عطل','discovery':'اكتشاف مرشحين','analysis_failed':'تعذّر التحليل','ai_timeout':'انتهاء مهلة الذكاء الاصطناعي','missing_company':'بيانات شركة ناقصة','delayed_analysis':'تحليل استغرق وقتاً أطول من المعتاد','validation_failure':'تعذّر التحقق من البيانات'}.get(e.event_type, 'حدث مسجل') }}</td>
         <td>{{ 'نعم' if e.success else 'لا' }}</td>
         <td>{{ e.latency_ms }}</td>
         <td>{{ {'AI_TIMEOUT':'انتهاء مهلة خدمة الذكاء الاصطناعي','MISSING_COMPANY':'بيانات الشركة غير موجودة','DELAYED_ANALYSIS':'تأخر إكمال التحليل','timeout':'انتهاء مهلة الاتصال بخدمة الذكاء الاصطناعي','connection_error':'تعذر الاتصال بخدمة Gemini','invalid_response_http_200':'رد Gemini لا يطابق البنية المطلوبة','ai_error':'مشكلة في خدمة الذكاء الاصطناعي','authentication_http_401':'رفض المصادقة (HTTP 401)','authentication_http_403':'صلاحية مرفوضة (HTTP 403)','rate_limit_http_429':'تجاوز حد الطلبات (HTTP 429)','provider_http_503':'خدمة Gemini غير متاحة (HTTP 503)','missing_company':'بيانات الشركة غير موجودة','invalid_pair':'يجب اختيار شركتين مختلفتين','simulated_timeout':'محاكاة مهلة؛ لم يُرسل طلب إلى Gemini','simulated_delay':'محاكاة تأخير؛ لم يُرسل طلب إلى Gemini'}.get(e.error_code, e.error_code or '—') }}</td>
@@ -80,17 +88,4 @@
     </tbody>
   </table>
 </div>
-<script>
-const types = {{ metrics.by_type | tojson }};
-const typeLabels = {analysis:'تحليل شركات',ai_analysis:'تحليل الشركات',ai_demo:'شرح تجريبي',fault_simulation:'محاكاة عطل',analysis_failed:'تعذّر التحليل',ai_timeout:'انتهاء مهلة الذكاء الاصطناعي',missing_company:'بيانات شركة ناقصة',delayed_analysis:'تحليل متأخر',validation_failure:'تعذّر التحقق من البيانات'};
-const chartTypes = types.filter(t => t.type !== 'gemini_api_request' && typeLabels[t.type]);
-new Chart(document.getElementById('typeChart'), {
-  type: 'bar',
-  data: {
-    labels: chartTypes.map(t => typeLabels[t.type]),
-    datasets: [{ label: 'عدد', data: chartTypes.map(t => t.count), backgroundColor: '#1b4f8a' }]
-  },
-  options: { plugins: { legend: { display: false } } }
-});
-</script>
 {% endblock %}

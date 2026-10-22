@@ -1,35 +1,67 @@
 {% extends "base.html" %}
-{% block title %}التقارير{% endblock %}
+{% block title %}التقارير — مِشراك{% endblock %}
 {% block content %}
-<div class="grid grid-2">
-  <div class="card">
-    <h2>تحليلات محفوظة</h2>
-    <table>
-      <thead><tr><th>الوقت</th><th>النوع</th><th>أ</th><th>ب</th><th>وضع</th><th></th></tr></thead>
-      <tbody>
+<section class="page-intro reports-intro">
+  <div><span class="eyebrow">سجل التحليلات</span><h2>تقاريرك في مكان واحد</h2><p>راجع المقارنات ونتائج الاكتشاف السابقة، وافتح الدرجة والمعايير والشرح والمصادر المرتبطة بكل تحليل.</p></div>
+  <a class="btn" href="{{ url_for('main.compare') }}">تحليل جديد <span aria-hidden="true">←</span></a>
+</section>
+<section class="report-summary">
+  <article><span class="summary-icon">▤</span><div><b>{{ analyses|length }}</b><small>تحليل ظاهر في السجل</small></div></article>
+  <article><span class="summary-icon summary-green">✓</span><div><b>{{ analyses|selectattr('status','equalto','completed')|list|length }}</b><small>تحليل مكتمل</small></div></article>
+  <article><span class="summary-icon summary-gold">↔</span><div><b>{{ analyses|selectattr('analysis_type','equalto','partnership')|list|length }}</b><small>تحليل شراكة استراتيجية</small></div></article>
+  <article><span class="summary-icon summary-purple">⌘</span><div><b>{{ analyses|selectattr('analysis_type','equalto','joint_venture')|list|length }}</b><small>تحليل مشروع مشترك</small></div></article>
+</section>
+
+<div class="reports-layout">
+  <section class="card report-list-card">
+    <div class="section-title-row"><div><span class="eyebrow">آخر النتائج</span><h3>قائمة التقارير</h3></div><label class="report-search"><span aria-hidden="true">⌕</span><input id="reportSearch" type="search" placeholder="ابحث باسم الشركة أو العلاقة" aria-label="ابحث في التقارير"></label></div>
+    {% if analyses %}<div class="report-filters" aria-label="تصفية التقارير">
+      <label>حالة التقرير<select id="statusFilter"><option value="all">كل الحالات</option><option value="completed">مكتمل</option><option value="failed">تعذّر إكماله</option></select></label>
+      <label>نوع العلاقة<select id="typeFilter"><option value="all">كل العلاقات</option><option value="partnership">شراكة استراتيجية</option><option value="joint_venture">مشروع مشترك</option></select></label>
+      <span id="reportCount" class="filter-count">{{ analyses|length }} تقرير</span>
+    </div>{% endif %}
+    {% if analyses %}
+    <div class="report-entries" id="reportEntries">
       {% for a in analyses %}
-        <tr>
-          <td>{{ a.created_at }}</td>
-          <td>{{ analysis_labels.get(a.analysis_type, a.analysis_type) }}</td>
-          <td>{{ a.company_a.official_name if a.company_a else '—' }}</td>
-          <td>{{ a.company_b.official_name if a.company_b else 'اكتشاف' }}</td>
-          <td>{{ analysis_status_text(a) }}</td>
-          <td><a href="{{ url_for('main.analysis_detail', analysis_id=a.id) }}">عرض التقرير</a>
-              · <a href="{{ url_for('main.analysis_json', analysis_id=a.id) }}">بيانات التقرير</a></td>
-        </tr>
+      <article class="report-entry" data-report-row data-status="{{ a.status }}" data-kind="{{ a.analysis_type }}" data-search="{{ (a.company_a.official_name if a.company_a else '') }} {{ (a.company_b.official_name if a.company_b else '') }} {{ analysis_labels.get(a.analysis_type, a.analysis_type) }}">
+        <div class="report-entry-icon">{{ '⇄' if a.analysis_type == 'partnership' else '⌘' }}</div>
+        <div class="report-entry-main"><div class="report-entry-tags"><span class="tag navy">{{ analysis_labels.get(a.analysis_type, a.analysis_type) }}</span><span class="report-state {{ 'state-success' if a.status == 'completed' else 'state-failed' }}">{{ 'مكتمل' if a.status == 'completed' else 'تعذّر' }}</span></div>
+          <h4>{{ a.company_a.official_name if a.company_a else 'شركة غير محددة' }} <span>↔</span> {{ a.company_b.official_name if a.company_b else 'قائمة مرشحين' }}</h4>
+          <div class="report-meta"><span>{{ a.created_at.strftime('%Y-%m-%d · %H:%M') if a.created_at else '—' }}</span><span>{{ 'شرح تجريبي' if a.mode == 'demo_rules' else 'شرح Gemini' if a.mode == 'llm' else 'تحليل بالقواعد' if a.status == 'completed' else 'لم يكتمل' }}</span><span>{{ a.latency_ms or '—' }} ملي ثانية</span></div>
+        </div>
+        <div class="report-entry-actions"><a class="btn secondary" href="{{ url_for('main.analysis_detail', analysis_id=a.id) }}">فتح التقرير <span aria-hidden="true">←</span></a><a class="json-link" href="{{ url_for('main.analysis_json', analysis_id=a.id) }}">عرض JSON</a></div>
+      </article>
       {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  <div class="card">
-    <h2>عن التقارير</h2>
-    <p class="muted">هنا تجد سجل المقارنات والتحليلات التي أُجريت على الشركات. افتح التقرير لمراجعة درجة التوافق، والمعايير، وفرص التعاون والمخاطر والقيود.</p>
-    <div class="panel" style="margin-top:16px">
-      <h3>كيف أقرأ النتيجة؟</h3>
-      <p>الدرجة تُحسب وفق معايير ثابتة، أما الشرح النصي فيساعد على فهم النتائج ولا يُعدّ توصية استثمارية.</p>
-      <p class="muted">قد تختلف التفاصيل بحسب البيانات المتاحة. إذا غابت البيانات المالية أو المصادر، يوضح التقرير ذلك بدل عرض أرقام غير موثقة.</p>
     </div>
-    <p class="muted" style="margin-top:16px">استخدم «بيانات التقرير» لعرض النتيجة بصيغة JSON.</p>
-  </div>
+    <div class="empty-state hidden" id="noReportResults"><b>لا توجد نتائج مطابقة</b><p>جرّب اسماً آخر أو امسح البحث.</p></div>
+    {% else %}
+    <div class="empty-state"><span class="empty-icon">▤</span><b>لم تحفظ أي تقرير بعد</b><p>ابدأ مقارنة شركتين أو اكتشف مرشحين، وستظهر تقاريرك هنا.</p><a class="btn" href="{{ url_for('main.discover') }}">ابدأ الاكتشاف</a></div>
+    {% endif %}
+  </section>
+  <aside class="reports-aside">
+    <section class="card report-reading-card"><span class="eyebrow">دليل قراءة التقرير</span><h3>ماذا تعني النتيجة؟</h3>
+      <div class="reading-row"><span class="score-badge score-high">80+</span><p><b>توافق مرتفع</b><small>راجع الأدلة والقيود قبل اتخاذ القرار.</small></p></div>
+      <div class="reading-row"><span class="score-badge score-mid">60–79</span><p><b>توافق متوسط</b><small>وازن بين نقاط القوة والمخاطر.</small></p></div>
+      <div class="reading-row"><span class="score-badge score-low">&lt;60</span><p><b>توافق أقل وفق المعايير</b><small>الدرجة أداة فرز أولي وليست حكماً على الشركة.</small></p></div>
+    </section>
+    <section class="notice-card"><span>ⓘ</span><div><b>اقرأ الحدود قبل القرار</b><p>الدرجة أداة فرز أولي. قد تكون بعض البيانات ناقصة، ولا تعني النتيجة وجود اتفاق قائم أو توصية استثمارية.</p></div></section>
+    <a class="reports-cta" href="{{ url_for('main.discover') }}"><span>⌕</span><div><b>تبحث عن مرشحين جدد؟</b><small>افتح الاكتشاف الذكي وابدأ من شركة</small></div><i>←</i></a>
+  </aside>
 </div>
+<script>
+const reportSearch = document.getElementById('reportSearch');
+const statusFilter = document.getElementById('statusFilter');
+const typeFilter = document.getElementById('typeFilter');
+const filterReports = () => {
+  const query = (reportSearch?.value || '').trim().toLocaleLowerCase('ar');
+  const status = statusFilter?.value || 'all'; const kind = typeFilter?.value || 'all'; let visible = 0;
+  document.querySelectorAll('[data-report-row]').forEach(row => {
+    const match = row.dataset.search.toLocaleLowerCase('ar').includes(query) && (status === 'all' || row.dataset.status === status) && (kind === 'all' || row.dataset.kind === kind);
+    row.hidden = !match; if (match) visible++;
+  });
+  document.getElementById('noReportResults')?.classList.toggle('hidden', visible !== 0);
+  const count = document.getElementById('reportCount'); if (count) count.textContent = `${visible} تقرير`;
+};
+reportSearch?.addEventListener('input', filterReports); statusFilter?.addEventListener('change', filterReports); typeFilter?.addEventListener('change', filterReports);
+</script>
 {% endblock %}

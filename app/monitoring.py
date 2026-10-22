@@ -49,9 +49,10 @@ def dashboard_metrics(hours=24 * 14):
         TechnicalMonitoringEvent.success.is_(False),
     ).count()
     validation_failures = q.filter_by(event_type="validation_failure").count()
-    tokens_in = q.with_entities(func.coalesce(func.sum(TechnicalMonitoringEvent.tokens_in), 0)).scalar()
-    tokens_out = q.with_entities(func.coalesce(func.sum(TechnicalMonitoringEvent.tokens_out), 0)).scalar()
-    cost = q.with_entities(func.coalesce(func.sum(TechnicalMonitoringEvent.estimated_cost_usd), 0)).scalar()
+    gemini_q = q.filter(TechnicalMonitoringEvent.event_type == "gemini_api_request")
+    tokens_in = gemini_q.with_entities(func.sum(TechnicalMonitoringEvent.tokens_in)).scalar()
+    tokens_out = gemini_q.with_entities(func.sum(TechnicalMonitoringEvent.tokens_out)).scalar()
+    cost = gemini_q.with_entities(func.sum(TechnicalMonitoringEvent.estimated_cost_usd)).scalar()
     last_event = TechnicalMonitoringEvent.query.order_by(TechnicalMonitoringEvent.created_at.desc()).first()
     freshness_minutes = None
     if last_event:
@@ -73,9 +74,9 @@ def dashboard_metrics(hours=24 * 14):
         "avg_latency_ms": round(avg_latency, 1) if avg_latency else 0,
         "ai_failures": ai_failures,
         "validation_failures": validation_failures,
-        "tokens_in": int(tokens_in or 0),
-        "tokens_out": int(tokens_out or 0),
-        "estimated_cost_usd": round(float(cost or 0), 6),
+        "tokens_in": int(tokens_in) if tokens_in is not None else None,
+        "tokens_out": int(tokens_out) if tokens_out is not None else None,
+        "estimated_cost_usd": round(float(cost), 6) if cost is not None else None,
         "freshness_minutes": freshness_minutes,
         "by_type": [{"type": t, "count": c} for t, c in by_type],
         "recent": recent,

@@ -4,10 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}مِشراك{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261022-ui3">
 </head>
 <body>
   <header class="app-header">
@@ -22,19 +19,16 @@
     </div>
     <nav class="nav">
       {% if logged_in_user %}
-      <a href="{{ url_for('main.home') }}">الرئيسية</a>
-      <a href="{{ url_for('main.compare') }}">مقارنة الشركات</a>
-      <a href="{{ url_for('main.discover') }}">الاكتشاف الذكي</a>
+      <a href="{{ url_for('main.home') }}" class="{{ 'active' if request.endpoint == 'main.home' else '' }}" {% if request.endpoint == 'main.home' %}aria-current="page"{% endif %}>الرئيسية</a>
+      <a href="{{ url_for('main.compare') }}" class="{{ 'active' if request.endpoint == 'main.compare' else '' }}" {% if request.endpoint == 'main.compare' %}aria-current="page"{% endif %}>مقارنة الشركات</a>
+      <a href="{{ url_for('main.discover') }}" class="{{ 'active' if request.endpoint in ('main.discover', 'main._run_discovery') else '' }}" {% if request.endpoint == 'main.discover' %}aria-current="page"{% endif %}>الاكتشاف الذكي</a>
       {% if logged_in_user.role == 'admin' %}
-      <a href="{{ url_for('main.system_monitor') }}">مراقبة النظام</a>
+      <a href="{{ url_for('main.system_monitor') }}" class="{{ 'active' if request.endpoint == 'main.system_monitor' else '' }}" {% if request.endpoint == 'main.system_monitor' %}aria-current="page"{% endif %}>مراقبة النظام</a>
       {% endif %}
-      <a href="{{ url_for('main.reports') }}">التقارير</a>
+      <a href="{{ url_for('main.reports') }}" class="{{ 'active' if request.endpoint in ('main.reports', 'main.analysis_detail', 'main.analysis_json') else '' }}" {% if request.endpoint in ('main.reports', 'main.analysis_detail', 'main.analysis_json') %}aria-current="page"{% endif %}>التقارير</a>
       {% endif %}
     </nav>
     {% if logged_in_user %}<div class="account-area"><span class="account-name">{{ logged_in_user.username }} · {{ 'مدير' if logged_in_user.role == 'admin' else 'مستخدم' }}</span><form method="post" action="{{ url_for('auth.logout') }}"><button class="logout-btn" type="submit">خروج</button></form></div>{% else %}<a class="login-link" href="{{ url_for('auth.login') }}">تسجيل الدخول</a>{% endif %}
-    {% if logged_in_user %}<span class="mode-pill">
-      {% if llm_mode == 'llm' %}تحليل بمساعدة الذكاء الاصطناعي{% else %}وضع تجريبي — تحليل آلي بقواعد ثابتة{% endif %}
-    </span>{% endif %}
   </header>
   <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -45,5 +39,17 @@
     {% block content %}{% endblock %}
   </main>
   <div class="footer">مِشراك — أداة مساندة لتحليل فرص التعاون بين الشركات، ولا تُعدّ توصية استثمارية.</div>
+  <script>
+    document.querySelectorAll('form.stack').forEach((form) => {
+      form.addEventListener('submit', () => {
+        const button = form.querySelector('button[type="submit"]');
+        if (!button || button.disabled) return;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.dataset.originalText = button.textContent.trim();
+        button.textContent = 'جارٍ تنفيذ الطلب…';
+      });
+    });
+  </script>
 </body>
 </html>
