@@ -1,4 +1,4 @@
-from app.models import Analysis, BusinessRelationship, Company, KPITarget, Milestone, Recommendation, RelationshipObjective, TechnicalMonitoringEvent
+from app.models import Analysis, Company, Recommendation, TechnicalMonitoringEvent
 from app.monitoring import dashboard_metrics
 
 
@@ -50,12 +50,6 @@ def test_timeout_simulation_records_failure(client, app):
         assert metrics["total"] == TechnicalMonitoringEvent.query.count() or metrics["total"] >= 1
 
 
-def test_invalid_kpi_simulation(client, app):
-    client.post("/system/simulate", data={"kind": "invalid_kpi"}, follow_redirects=True)
-    with app.app_context():
-        assert TechnicalMonitoringEvent.query.filter_by(event_type="kpi_update_failure").count() >= 1
-
-
 def test_discovery_page(client, app):
     with app.app_context():
         company = Company.query.filter_by(symbol="7010").first()
@@ -67,33 +61,9 @@ def test_discovery_page(client, app):
         assert Recommendation.query.filter_by(analysis_id=discovery.id).count() == 5
 
 
-def test_relationship_creation_saves_configured_business_targets(client, app):
-    with app.app_context():
-        a = Company.query.filter_by(symbol="7010").first()
-        b = Company.query.filter_by(symbol="1120").first()
-        a_id, b_id = a.id, b.id
-    response = client.post("/partnerships/create", data={
-        "name": "اختبار علاقة",
-        "company_a": a_id,
-        "company_b": b_id,
-        "relationship_type": "partnership",
-        "start_date": "2026-10-21",
-        "status": "draft",
-        "reporting_frequency": "quarterly",
-        "objective": "توسيع القنوات",
-        "operational_target": "إطلاق قبل نهاية الربع",
-        "financial_target": "إيراد شراكة",
-        "kpi_name": "إيراد القنوات",
-        "kpi_target": "1000000",
-        "kpi_unit": "SAR",
-        "kpi_direction": "higher_better",
-        "milestone_title": "إطلاق المرحلة الأولى",
-        "milestone_due": "2026-12-01",
-    }, follow_redirects=True)
-    assert response.status_code == 200
-    with app.app_context():
-        rel = BusinessRelationship.query.filter_by(name="اختبار علاقة").first()
-        assert rel is not None and rel.status == "draft" and not rel.is_simulated
-        assert KPITarget.query.filter_by(relationship_id=rel.id, name="إيراد القنوات", target_value=1_000_000).first()
-        assert Milestone.query.filter_by(relationship_id=rel.id, title="إطلاق المرحلة الأولى").first()
-        assert RelationshipObjective.query.filter_by(relationship_id=rel.id, category="financial").first()
+def test_business_monitoring_pages_are_removed(client):
+    for path in ("/partnerships", "/partnerships/create", "/partnerships/1"):
+        assert client.get(path).status_code == 404
+    page = client.get("/").get_data(as_text=True)
+    assert "مراقبة الشراكات" not in page
+    assert "مراقبة النظام" in page

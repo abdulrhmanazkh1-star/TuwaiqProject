@@ -1,9 +1,7 @@
-"""Seed a verified-listed-company catalogue and one explicitly simulated case."""
+"""Seed the verified-listed-company catalogue."""
 
-from datetime import date
 from sqlalchemy import or_
 
-from app.kpis import refresh_alerts
 from app.models import (
     AIEvaluationResult,
     Analysis,
@@ -133,51 +131,3 @@ def seed_if_empty():
             if not CompanySource.query.filter_by(company_id=company.id).first():
                 db.session.add(CompanySource(company_id=company.id, title="دليل المُصدرين — تداول السعودية", url=EXCHANGE_DIRECTORY, published_at=None, notes="البيانات المالية غير مستوردة."))
     db.session.commit()
-
-    # One clearly fictional relationship illustrates KPI tracking without implying a real contract.
-    if BusinessRelationship.query.filter_by(name="شراكة تكامل القنوات — مثال مُحاكى").first() is None:
-        _seed_demo_relationship()
-
-
-def _seed_demo_relationship():
-    stc = Company.query.filter_by(symbol="7010").first()
-    bank = Company.query.filter_by(symbol="1120").first()
-    if not stc or not bank:
-        return
-    rel = BusinessRelationship(
-        name="شراكة تكامل القنوات — مثال مُحاكى",
-        company_a_id=stc.id,
-        company_b_id=bank.id,
-        relationship_type="partnership",
-        start_date=date(2026, 1, 1),
-        planned_end_date=date(2026, 12, 31),
-        status="signed",
-        initial_budget=2_500_000,
-        reporting_frequency="monthly",
-        is_simulated=True,
-        notes="علاقة افتراضية للتدريب فقط. لا تمثل شراكة فعلية بين الشركتين ولا بيانات داخلية.",
-    )
-    db.session.add(rel)
-    db.session.flush()
-    db.session.add_all([
-        RelationshipObjective(relationship_id=rel.id, title="إيراد منسوب للتعاون", description="هدف توضيحي مُحاكى للتدريب.", category="financial"),
-        RelationshipObjective(relationship_id=rel.id, title="إطلاق تكامل تجريبي", description="معلم توضيحي مُحاكى.", category="operational"),
-    ])
-    revenue = KPITarget(relationship_id=rel.id, name="إيراد منسوب للشراكة", unit="SAR", target_value=1_000_000, direction="higher_better", period_label="شهري")
-    customers = KPITarget(relationship_id=rel.id, name="عملاء جدد عبر الشراكة", unit="عميل", target_value=300, direction="higher_better", period_label="شهري")
-    cost = KPITarget(relationship_id=rel.id, name="تكلفة تشغيل التكامل", unit="SAR", target_value=80_000, direction="lower_better", period_label="شهري")
-    db.session.add_all([revenue, customers, cost])
-    db.session.flush()
-    for period, value in [("2026-01", 120000), ("2026-02", 230000), ("2026-03", 330000), ("2026-04", 430000), ("2026-05", 540000), ("2026-06", 650000)]:
-        db.session.add(KPIActual(target_id=revenue.id, period=period, actual_value=value, source="simulated"))
-    for period, value in [("2026-01", 40), ("2026-02", 90), ("2026-03", 140), ("2026-04", 185), ("2026-05", 220), ("2026-06", 250)]:
-        db.session.add(KPIActual(target_id=customers.id, period=period, actual_value=value, source="simulated"))
-    for period, value in [("2026-01", 70000), ("2026-02", 74000), ("2026-03", 79000), ("2026-04", 88000), ("2026-05", 95000), ("2026-06", 102000)]:
-        db.session.add(KPIActual(target_id=cost.id, period=period, actual_value=value, source="simulated"))
-    db.session.add_all([
-        Milestone(relationship_id=rel.id, title="اعتماد نطاق التكامل — مثال", due_date=date(2026, 2, 15), completed_at=date(2026, 2, 10), status="completed", progress_pct=100),
-        Milestone(relationship_id=rel.id, title="إطلاق بوابة تجريبية — مثال", due_date=date(2026, 4, 30), completed_at=None, status="delayed", progress_pct=55),
-        Milestone(relationship_id=rel.id, title="مراجعة نتائج النصف الأول — مثال", due_date=date(2026, 7, 15), completed_at=None, status="delayed", progress_pct=20),
-    ])
-    db.session.commit()
-    refresh_alerts(rel)

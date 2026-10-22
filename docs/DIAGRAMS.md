@@ -23,30 +23,21 @@ Lifecycle actually used:
 2. Create a local catalogue of listed company identities referenced to the Saudi Exchange issuer directory; leave financial fields blank until official data is sourced.
 3. Implement models, scoring, routes, templates.
 4. Wire LLM via env vars with deterministic fallback.
-5. Add pytest coverage for scores, KPIs, alerts, monitoring.
-6. Run locally, fix failures, and keep SQLite file in the instance path. Startup seeds business-demo data only; it does not fabricate technical telemetry.
+5. Add pytest coverage for scores, discovery, and technical monitoring.
+6. Run locally, fix failures, and keep SQLite file in the instance path. Startup seeds the company catalogue and does not fabricate technical telemetry.
 
 ## Monitoring Flow
 
 ```mermaid
 flowchart TB
   subgraph Technical["Technical monitoring (System dashboard)"]
-    E1[Application events\nanalysis / discovery / KPI / validation] --> C1[record_event]
+    E1[Application events\nanalysis / discovery / validation] --> C1[record_event]
     C1 --> DB1[(technical_monitoring_events)]
     DB1 --> M1[dashboard_metrics\ncounts, latency, error rate, tokens, cost]
     M1 --> UI1[System Monitoring Dashboard]
     M1 --> AL1[Visible failures and simulate buttons]
   end
 
-  subgraph Business["Business monitoring (Partnership dashboard)"]
-    R[Signed / approved relationship] --> T[KPI targets + milestones]
-    T --> A[Manual or CSV actuals]
-    A --> V[kpi_achievement formulas]
-    V --> AL2[BusinessAlert rows]
-    AL2 --> UI2[Partnership Performance Monitoring]
-    V --> AI[AI / Demo summary from recorded facts]
-    AI --> MG[Management review]
-  end
 ```
 
-The two flows share one Flask app and one SQLite database, but they use different tables and pages.
+The implemented monitoring flow covers technical application events only.

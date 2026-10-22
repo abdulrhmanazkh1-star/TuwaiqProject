@@ -55,48 +55,6 @@ def analyze_with_ai(company_a, company_b, analysis_type: str, score_payload: dic
     return parsed, "llm", int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
 
 
-def summarize_relationship(relationship, kpi_rows, milestones, alerts, simulate_timeout=False):
-    facts = {
-        "relationship": relationship.name,
-        "type": relationship.relationship_type,
-        "status": relationship.status,
-        "is_simulated": relationship.is_simulated,
-        "kpis": kpi_rows,
-        "milestones": [
-            {
-                "title": m.title,
-                "due_date": str(m.due_date),
-                "status": m.status,
-                "progress_pct": m.progress_pct,
-            }
-            for m in milestones
-        ],
-        "alerts": [a.message for a in alerts],
-    }
-    if simulate_timeout:
-        raise TimeoutError("Simulated AI API timeout")
-    if not llm_configured():
-        return _demo_monitor_summary(facts), "demo_rules", 0, 0
-    system = (
-        "Summarize partnership performance using only provided KPI facts. "
-        "Do not invent root causes. Arabic JSON with keys: on_track (bool), "
-        "underperforming (list), changes (list), delayed_milestones (list), investigate (list)."
-    )
-    payload = {
-        "model": current_app.config["LLM_MODEL"],
-        "temperature": 0.1,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": json.dumps(facts, ensure_ascii=False, default=str)},
-        ],
-        "response_format": {"type": "json_object"},
-    }
-    body = _post_chat_completion(payload)
-    content = body["choices"][0]["message"]["content"]
-    usage = body.get("usage") or {}
-    return _parse_json(content), "llm", int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
-
-
 def _post_chat_completion(payload):
     """Retry transient Gemini/API failures with bounded exponential backoff."""
     headers = {
@@ -191,24 +149,4 @@ def _demo_narrative(company_a, company_b, analysis_type, score_payload):
             "facts": ["الأسماء، القطاعات، والأرقام المالية المخزّنة في قاعدة البيانات المحلية."],
             "interpretation": ["فرص التعاون والمخاطر السردية في وضع التجربة."],
         },
-    }
-
-
-def _demo_monitor_summary(facts):
-    under = [k["name"] for k in facts["kpis"] if k.get("status") in ("Off Track", "Needs Attention")]
-    delayed = [m["title"] for m in facts["milestones"] if m.get("status") == "delayed"]
-    on_track = not under and not delayed
-    return {
-        "on_track": on_track,
-        "underperforming": under,
-        "changes": ["المقارنة تعتمد على آخر قيمة فعلية مُدخلة لكل مؤشر."],
-        "delayed_milestones": delayed,
-        "investigate": [
-            "مراجعة سبب انحراف المؤشرات المتأخرة دون افتراض السبب الجذري.",
-            "التحقق من اكتمال إدخال البيانات قبل أي قرار إداري.",
-        ]
-        if under or delayed
-        else ["الاستمرار في الرصد الدوري."],
-        "demo_mode": True,
-        "evidence_only": True,
     }

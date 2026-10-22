@@ -3,7 +3,7 @@
 {% block content %}
 <section class="hero">
   <h2>لوحة مراقبة النظام التقنية</h2>
-  <p class="muted">الأرقام محسوبة من جدول الأحداث الفعلي. هذه اللوحة منفصلة معمارياً عن مراقبة أداء الشراكات.</p>
+  <p class="muted">الأرقام محسوبة من أحداث التطبيق الفعلية، وتعرض حالة التحليلات والخدمات التقنية.</p>
 </section>
 <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <symbol id="icon-events" viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M10 12h6M10 16h6"/></symbol>
@@ -13,7 +13,6 @@
   <symbol id="icon-latency" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6M12 5V3"/></symbol>
   <symbol id="icon-ai" viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="12" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9 16h6M2 11v4M22 11v4M8 21h8"/></symbol>
   <symbol id="icon-validation" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-4.8"/></symbol>
-  <symbol id="icon-kpi" viewBox="0 0 24 24"><path d="M4 20V11h4v9M10 20V5h4v15M16 20v-7h4v7M3 21h18"/></symbol>
   <symbol id="icon-freshness" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M8 2h8M12 5V3"/></symbol>
   <symbol id="icon-usage" viewBox="0 0 24 24"><path d="M7 7h13l-3-3M20 7l-3 3M17 17H4l3 3M4 17l3-3"/><path d="M10 9h4v6h-4z"/></symbol>
   <symbol id="icon-cost" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 6V4h10v2M12 13v4M14 14.5c0-.8-.8-1.5-2-1.5s-2 .7-2 1.5.8 1.5 2 1.5 2 .7 2 1.5-.8 1.5-2 1.5-2-.7-2-1.5"/></symbol>
@@ -26,7 +25,6 @@
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-latency"/></svg></span>متوسط زمن المعالجة</div><b>{{ metrics.avg_latency_ms }} ملي ثانية</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-ai"/></svg></span>أخطاء الذكاء الاصطناعي</div><b>{{ metrics.ai_failures }}</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-validation"/></svg></span>أخطاء التحقق من البيانات</div><b>{{ metrics.validation_failures }}</b></div>
-  <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-kpi"/></svg></span>أخطاء تحديث مؤشرات الأداء</div><b>{{ metrics.kpi_failures }}</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-freshness"/></svg></span>عمر أحدث بيانات (دقائق)</div><b>{{ metrics.freshness_minutes if metrics.freshness_minutes is not none else '—' }}</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-usage"/></svg></span>وحدات الاستخدام (إدخال/إخراج)</div><b>{{ metrics.tokens_in }} / {{ metrics.tokens_out }}</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-cost"/></svg></span>التكلفة التقديرية بالدولار</div><b>{{ metrics.estimated_cost_usd }}</b></div>
@@ -37,7 +35,6 @@
     <form method="post" action="{{ url_for('main.simulate') }}" class="stack">
       <button class="btn" name="kind" value="ai_timeout">انتهاء مهلة الذكاء الاصطناعي</button>
       <button class="btn secondary" name="kind" value="missing_company">شركة ناقصة</button>
-      <button class="btn secondary" name="kind" value="invalid_kpi">قيمة مؤشر غير صالحة</button>
       <button class="btn gold" name="kind" value="delayed_analysis">تحليل متأخر</button>
     </form>
   </div>
@@ -54,10 +51,10 @@
     {% for e in metrics.recent %}
       <tr>
         <td>{{ e.created_at }}</td>
-        <td>{{ {'analysis':'تحليل شركات','ai_analysis':'تحليل الشركات','ai_monitor_summary':'تلخيص أداء الشراكة','analysis_failed':'تعذّر التحليل','ai_timeout':'انتهاء مهلة الذكاء الاصطناعي','missing_company':'بيانات شركة ناقصة','invalid_kpi':'قيمة مؤشر غير صالحة','delayed_analysis':'تحليل استغرق وقتاً أطول من المعتاد','validation_failure':'تعذّر التحقق من البيانات','kpi_update_failure':'تعذّر تحديث مؤشرات الأداء'}.get(e.event_type, 'حدث في النظام') }}</td>
+        <td>{{ {'analysis':'تحليل شركات','ai_analysis':'تحليل الشركات','analysis_failed':'تعذّر التحليل','ai_timeout':'انتهاء مهلة الذكاء الاصطناعي','missing_company':'بيانات شركة ناقصة','delayed_analysis':'تحليل استغرق وقتاً أطول من المعتاد','validation_failure':'تعذّر التحقق من البيانات'}.get(e.event_type, 'حدث في النظام') }}</td>
         <td>{{ 'نعم' if e.success else 'لا' }}</td>
         <td>{{ e.latency_ms }}</td>
-        <td>{{ {'AI_TIMEOUT':'انتهاء مهلة خدمة الذكاء الاصطناعي','MISSING_COMPANY':'بيانات الشركة غير موجودة','INVALID_KPI':'قيمة المؤشر غير صالحة','DELAYED_ANALYSIS':'تأخر إكمال التحليل','timeout':'انتهاء مهلة الاتصال بخدمة الذكاء الاصطناعي','ai_error':'مشكلة في خدمة الذكاء الاصطناعي','gemini_503':'Gemini مشغول أو غير متاح مؤقتاً','gemini_429':'تجاوز حد الطلبات لدى Gemini','gemini_auth':'تعذر التحقق من مفتاح Gemini','missing_company':'بيانات الشركة غير موجودة','invalid_kpi':'قيمة المؤشر غير صالحة','invalid_pair':'يجب اختيار شركتين مختلفتين'}.get(e.error_code, '—') }}</td>
+        <td>{{ {'AI_TIMEOUT':'انتهاء مهلة خدمة الذكاء الاصطناعي','MISSING_COMPANY':'بيانات الشركة غير موجودة','DELAYED_ANALYSIS':'تأخر إكمال التحليل','timeout':'انتهاء مهلة الاتصال بخدمة الذكاء الاصطناعي','ai_error':'مشكلة في خدمة الذكاء الاصطناعي','gemini_503':'Gemini مشغول أو غير متاح مؤقتاً','gemini_429':'تجاوز حد الطلبات لدى Gemini','gemini_auth':'تعذر التحقق من مفتاح Gemini','missing_company':'بيانات الشركة غير موجودة','invalid_pair':'يجب اختيار شركتين مختلفتين'}.get(e.error_code, '—') }}</td>
         <td>{{ 'تم تسجيل الحدث لمتابعة أداء النظام.' if e.details else '—' }}</td>
       </tr>
     {% endfor %}
@@ -69,7 +66,7 @@ const types = {{ metrics.by_type | tojson }};
 new Chart(document.getElementById('typeChart'), {
   type: 'bar',
   data: {
-    labels: types.map(t => ({analysis:'تحليل شركات',ai_analysis:'تحليل الشركات',ai_monitor_summary:'تلخيص أداء الشراكة',analysis_failed:'تعذّر التحليل',ai_timeout:'انتهاء مهلة الذكاء الاصطناعي',missing_company:'بيانات شركة ناقصة',invalid_kpi:'قيمة مؤشر غير صالحة',delayed_analysis:'تحليل متأخر',validation_failure:'تعذّر التحقق من البيانات',kpi_update_failure:'تعذّر تحديث مؤشرات الأداء'}[t.type] || 'حدث آخر')),
+    labels: types.map(t => ({analysis:'تحليل شركات',ai_analysis:'تحليل الشركات',analysis_failed:'تعذّر التحليل',ai_timeout:'انتهاء مهلة الذكاء الاصطناعي',missing_company:'بيانات شركة ناقصة',delayed_analysis:'تحليل متأخر',validation_failure:'تعذّر التحقق من البيانات'}[t.type] || 'حدث آخر')),
     datasets: [{ label: 'عدد', data: types.map(t => t.count), backgroundColor: '#1b4f8a' }]
   },
   options: { plugins: { legend: { display: false } } }

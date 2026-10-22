@@ -26,7 +26,6 @@
       <a href="{{ url_for('main.compare') }}">مقارنة الشركات</a>
       <a href="{{ url_for('main.discover') }}">الاكتشاف الذكي</a>
       {% if logged_in_user.role == 'admin' %}
-      <a href="{{ url_for('main.partnerships') }}">مراقبة الشراكات</a>
       <a href="{{ url_for('main.system_monitor') }}">مراقبة النظام</a>
       {% endif %}
       <a href="{{ url_for('main.reports') }}">التقارير</a>

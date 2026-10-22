@@ -45,11 +45,10 @@ def dashboard_metrics(hours=24 * 14):
         func.avg(TechnicalMonitoringEvent.latency_ms)
     ).scalar()
     ai_failures = q.filter(
-        TechnicalMonitoringEvent.event_type.in_(["ai_analysis", "ai_monitor_summary"]),
+        TechnicalMonitoringEvent.event_type == "ai_analysis",
         TechnicalMonitoringEvent.success.is_(False),
     ).count()
     validation_failures = q.filter_by(event_type="validation_failure").count()
-    kpi_failures = q.filter_by(event_type="kpi_update_failure").count()
     tokens_in = q.with_entities(func.coalesce(func.sum(TechnicalMonitoringEvent.tokens_in), 0)).scalar()
     tokens_out = q.with_entities(func.coalesce(func.sum(TechnicalMonitoringEvent.tokens_out), 0)).scalar()
     cost = q.with_entities(func.coalesce(func.sum(TechnicalMonitoringEvent.estimated_cost_usd), 0)).scalar()
@@ -74,7 +73,6 @@ def dashboard_metrics(hours=24 * 14):
         "avg_latency_ms": round(avg_latency, 1) if avg_latency else 0,
         "ai_failures": ai_failures,
         "validation_failures": validation_failures,
-        "kpi_failures": kpi_failures,
         "tokens_in": int(tokens_in or 0),
         "tokens_out": int(tokens_out or 0),
         "estimated_cost_usd": round(float(cost or 0), 6),

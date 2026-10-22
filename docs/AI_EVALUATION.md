@@ -5,8 +5,7 @@
 | Check | Method | Result source |
 | --- | --- | --- |
 | Compatibility formulas | pytest | executed tests |
-| KPI direction (cost vs revenue) | pytest | executed tests |
-| Alert thresholds | pytest | executed tests |
+| Retained KPI formula helper | pytest | utility tests only; business monitoring page removed |
 | Monitoring event write-path | pytest | executed tests |
 | Live LLM factual accuracy | human template below | not invented |
 

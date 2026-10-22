@@ -8,7 +8,6 @@ CompatibilityMatch AI runs as one Flask application with SQLAlchemy and SQLite.
 - **HTTP:** routes in `app/views.py`.
 - **Scoring:** deterministic formulas in `app/scoring_engine.py`, exposed through `app/scoring.py`, version `cm-score-v2`. A normalized Arabic/English activity profile and reusable capability taxonomy find overlaps and complementary capability pairs. The explicit industry-relation dimension carries 9–10% weight; profile and capability signals drive other dimensions. No company symbol/name offsets are used. Missing verified financials are excluded from the numeric average and reduce evidence coverage.
 - **AI narrative:** `app/ai_engine.py`, OpenAI-compatible API or labeled deterministic Demo Mode.
-- **Business KPI calculations:** `app/kpis.py`.
 - **Technical telemetry:** `app/monitoring.py` writes application events and calculates dashboard metrics.
 - **Persistence:** relational SQLAlchemy models in `app/models.py`.
 
@@ -52,6 +51,6 @@ Strategic partnership and joint venture each have a separate weight set in `app/
 
 Capability taxonomy links describe plausible value-chain fit (for example, connectivity with banking or drilling with energy); these are explicit hypotheses, not evidence of an existing contract. Text overlap can indicate operational familiarity and competitive risk, so both fit and risk dimensions are shown. Unlisted sector relationships are neutral rather than penalized. Missing/synthetic financial rows are never treated as verified facts; unavailable criteria are omitted and the UI shows evidence coverage and limitations. Gemini can explain supplied facts and calculated scores but cannot alter them. These heuristics are not an empirically validated prediction model, and scores are not investment recommendations. Identical evidence can yield genuine ties; stable discovery tie order uses the company symbol. On the 27-company catalogue snapshot, the 351 unordered pairs produced 104 distinct rounded partnership scores and 105 distinct rounded joint-venture scores; repeated generic issuer summaries still create ties, so this is a useful prototype range, not proof of predictive accuracy.
 
-## Relationships
+## Removed business monitoring interface
 
-The demo relationship uses two real issuer records but its existence, target values, KPI actuals, and milestones are fictional. It is explicitly marked `is_simulated=true` throughout the UI. Company announcements cannot establish private contract performance; production monitoring depends on user-entered updates or reports.
+The partnership KPI monitoring page and its write routes are not part of the current product. Legacy relationship tables may remain in an existing SQLite database for backward compatibility, but the application no longer seeds demo relationships or exposes those records in the interface. The System Monitoring Dashboard covers application and AI service telemetry only.
