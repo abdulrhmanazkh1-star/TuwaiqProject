@@ -7,7 +7,7 @@ CompatibilityMatch AI runs as one Flask application with SQLAlchemy and SQLite.
 - **UI:** Arabic RTL Jinja2 pages with Chart.js.
 - **HTTP:** routes in `app/views.py`.
 - **Scoring:** deterministic formulas in `app/scoring_engine.py`, exposed through `app/scoring.py`, version `cm-score-v2`. A normalized Arabic/English activity profile and reusable capability taxonomy find overlaps and complementary capability pairs. The explicit industry-relation dimension carries 9–10% weight; profile and capability signals drive other dimensions. No company symbol/name offsets are used. Missing verified financials are excluded from the numeric average and reduce evidence coverage.
-- **AI narrative:** `app/ai_engine.py`, OpenAI-compatible API or labeled deterministic Demo Mode.
+- **AI narrative:** `app/ai_engine.py`, Gemini OpenAI-compatible endpoint or labeled deterministic Demo Mode. `gemini_api_request` telemetry is recorded per real provider attempt; demo and fault-simulation events are separate.
 - **Technical telemetry:** `app/monitoring.py` writes application events and calculates dashboard metrics.
 - **Persistence:** relational SQLAlchemy models in `app/models.py`.
 

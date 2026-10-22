@@ -50,6 +50,13 @@ def test_timeout_simulation_records_failure(client, app):
         assert metrics["total"] == TechnicalMonitoringEvent.query.count() or metrics["total"] >= 1
 
 
+def test_fault_simulation_is_not_counted_as_gemini_request(client, app):
+    client.post("/system/simulate", data={"kind": "ai_timeout"}, follow_redirects=True)
+    with app.app_context():
+        assert TechnicalMonitoringEvent.query.filter_by(event_type="fault_simulation").count() == 1
+        assert TechnicalMonitoringEvent.query.filter_by(event_type="gemini_api_request").count() == 0
+
+
 def test_discovery_page(client, app):
     with app.app_context():
         company = Company.query.filter_by(symbol="7010").first()

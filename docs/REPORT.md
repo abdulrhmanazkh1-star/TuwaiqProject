@@ -21,7 +21,7 @@ The Flask MVP supports deterministic company comparison for strategic partnershi
 
 ## 4. AI and development tools
 
-Python, Flask, SQLAlchemy, SQLite, Jinja2, HTML/CSS/JavaScript, Chart.js, pytest, and Cursor-assisted vibe coding. If configured, an OpenAI-compatible LLM API creates structured Arabic explanations from supplied company and score data. Without credentials, deterministic rules produce labeled Demo Mode text. The deterministic Python scoring engine always owns numeric results.
+Python, Flask, SQLAlchemy, SQLite, Jinja2, HTML/CSS/JavaScript, Chart.js, pytest, and Cursor-assisted vibe coding. If configured, Gemini through Google's OpenAI-compatible endpoint creates structured Arabic explanations from supplied company and score data. Without credentials, deterministic rules produce labeled Demo Mode text. The deterministic Python scoring engine always owns numeric results. Admin monitoring counts real Gemini HTTP attempts separately, records provider-reported token usage, and shows estimated cost only when both token counts are available.
 
 AI-assisted work included initial scaffolding, templates, and documentation. Product requirements, company sourcing policy, deterministic formulas, data labels, and scenario values were checked and corrected in the implementation. Live LLM generation was not evaluated without an API key.
 
@@ -31,7 +31,9 @@ Two documented weight sets cover partnership and joint venture. Version `cm-scor
 
 Automated tests cover scoring, absent financials, all 702 ordered pairs across the 27-company catalogue for both supported relationship types, every company as a discovery starting point, ranking/comparison consistency, new-company eligibility, technical monitoring events, Demo Mode, and API timeout simulation. Human factual support review template: `docs/AI_EVALUATION.md`.
 
-**Executed 22 October 2026:** `pytest -q -p no:cacheprovider` → **25 passed**. Existing SQLAlchemy deprecation warnings remain and do not fail the suite. Automated tests validate deterministic scoring, technical monitoring, and API handling; they do not establish real-world predictive accuracy. No live Gemini benchmark or human factual-claim review is claimed.
+Gemini API tests use mocked HTTP responses for success, absent credentials, 401/403, 429, timeout, and malformed structured output. A real Gemini request must be made after setting the Render environment variable; local tests do not require or expose a live secret.
+
+**Executed 22 October 2026:** test results are maintained by the current automated run; no live Gemini benchmark or human factual-claim review is claimed. Automated tests do not establish real-world predictive accuracy.
 
 ## 6. Technical monitoring
 

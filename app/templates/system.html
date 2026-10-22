@@ -29,6 +29,25 @@
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-usage"/></svg></span>وحدات الاستخدام (إدخال/إخراج)</div><b>{{ metrics.tokens_in }} / {{ metrics.tokens_out }}</b></div>
   <div class="metric"><div class="label metric-label"><span class="metric-icon"><svg aria-hidden="true"><use href="#icon-cost"/></svg></span>التكلفة التقديرية بالدولار</div><b>{{ metrics.estimated_cost_usd }}</b></div>
 </div>
+<section class="card" style="margin-top:16px">
+  <h3>مراقبة Gemini API</h3>
+  <p class="muted">تعرض هذه المؤشرات طلبات Gemini الحقيقية فقط. الوضع التجريبي ومحاكاة الأعطال لا تدخل ضمنها. الحالة: <strong>{{ gemini.status }}</strong> — {{ gemini.reason }}</p>
+  <p class="muted">النموذج: {{ gemini.model }} · آخر طلب: {{ gemini.last_request_at or 'لم يُسجل طلب' }}</p>
+  <div class="grid grid-3">
+    <div class="metric"><div class="label">إجمالي طلبات API الحقيقية</div><b>{{ gemini.total }}</b></div>
+    <div class="metric"><div class="label">طلبات ناجحة</div><b>{{ gemini.successful }}</b></div>
+    <div class="metric"><div class="label">طلبات فاشلة</div><b>{{ gemini.failed }}</b></div>
+    <div class="metric"><div class="label">رموز الإدخال المسجلة</div><b>{{ gemini.input_tokens if gemini.input_tokens is not none else '—' }}</b></div>
+    <div class="metric"><div class="label">رموز الإخراج المسجلة</div><b>{{ gemini.output_tokens if gemini.output_tokens is not none else '—' }}</b></div>
+    <div class="metric"><div class="label">متوسط زمن استجابة API</div><b>{{ gemini.average_latency_ms if gemini.average_latency_ms is not none else '—' }}{% if gemini.average_latency_ms is not none %} ملي ثانية{% endif %}</b></div>
+    <div class="metric"><div class="label">استخدام اليوم (UTC)</div><b>{{ gemini.daily.requests }} طلب · {{ gemini.daily.tokens_in if gemini.daily.tokens_in is not none else '—' }} / {{ gemini.daily.tokens_out if gemini.daily.tokens_out is not none else '—' }} رمز · {{ gemini.daily.cost_usd if gemini.daily.cost_usd is not none else '—' }} USD</b></div>
+    <div class="metric"><div class="label">استخدام هذا الشهر (UTC)</div><b>{{ gemini.monthly.requests }} طلب · {{ gemini.monthly.tokens_in if gemini.monthly.tokens_in is not none else '—' }} / {{ gemini.monthly.tokens_out if gemini.monthly.tokens_out is not none else '—' }} رمز · {{ gemini.monthly.cost_usd if gemini.monthly.cost_usd is not none else '—' }} USD</b></div>
+    <div class="metric"><div class="label">التكلفة التقديرية المسجلة (USD)</div><b>{{ gemini.estimated_cost_usd if gemini.estimated_cost_usd is not none else '—' }}</b></div>
+  </div>
+  <p class="muted" style="margin-top:12px">التكلفة تقديرية حسب أسعار الوحدة المضبوطة في إعدادات التطبيق، وليست فاتورة Google. لا تظهر أرقام الرموز أو التكلفة إن لم يرسلها مزود الخدمة.</p>
+  <h4>أخطاء Gemini المسجلة ورموز HTTP</h4>
+  {% if gemini.errors %}<ul>{% for code, count in gemini.errors %}<li><code>{{ code }}</code>: {{ count }}</li>{% endfor %}</ul>{% else %}<p class="muted">لا توجد أخطاء API مسجلة.</p>{% endif %}
+</section>
 <div class="grid grid-2" style="margin-top:16px">
   <div class="card">
     <h3>محاكاة أعطال للعرض</h3>
@@ -51,10 +70,10 @@
     {% for e in metrics.recent %}
       <tr>
         <td>{{ e.created_at }}</td>
-        <td>{{ {'analysis':'تحليل شركات','ai_analysis':'تحليل الشركات','analysis_failed':'تعذّر التحليل','ai_timeout':'انتهاء مهلة الذكاء الاصطناعي','missing_company':'بيانات شركة ناقصة','delayed_analysis':'تحليل استغرق وقتاً أطول من المعتاد','validation_failure':'تعذّر التحقق من البيانات'}.get(e.event_type, 'حدث في النظام') }}</td>
+        <td>{{ {'analysis':'تحليل شركات','ai_analysis':'تحليل الشركات','ai_demo':'شرح تجريبي بلا Gemini','gemini_api_request':'طلب Gemini حقيقي','fault_simulation':'محاكاة عطل','analysis_failed':'تعذّر التحليل','ai_timeout':'انتهاء مهلة الذكاء الاصطناعي','missing_company':'بيانات شركة ناقصة','delayed_analysis':'تحليل استغرق وقتاً أطول من المعتاد','validation_failure':'تعذّر التحقق من البيانات'}.get(e.event_type, 'حدث في النظام') }}</td>
         <td>{{ 'نعم' if e.success else 'لا' }}</td>
         <td>{{ e.latency_ms }}</td>
-        <td>{{ {'AI_TIMEOUT':'انتهاء مهلة خدمة الذكاء الاصطناعي','MISSING_COMPANY':'بيانات الشركة غير موجودة','DELAYED_ANALYSIS':'تأخر إكمال التحليل','timeout':'انتهاء مهلة الاتصال بخدمة الذكاء الاصطناعي','ai_error':'مشكلة في خدمة الذكاء الاصطناعي','gemini_503':'Gemini مشغول أو غير متاح مؤقتاً','gemini_429':'تجاوز حد الطلبات لدى Gemini','gemini_auth':'تعذر التحقق من مفتاح Gemini','missing_company':'بيانات الشركة غير موجودة','invalid_pair':'يجب اختيار شركتين مختلفتين'}.get(e.error_code, '—') }}</td>
+        <td>{{ {'AI_TIMEOUT':'انتهاء مهلة خدمة الذكاء الاصطناعي','MISSING_COMPANY':'بيانات الشركة غير موجودة','DELAYED_ANALYSIS':'تأخر إكمال التحليل','timeout':'انتهاء مهلة الاتصال بخدمة الذكاء الاصطناعي','connection_error':'تعذر الاتصال بخدمة Gemini','invalid_response_http_200':'رد Gemini لا يطابق البنية المطلوبة','ai_error':'مشكلة في خدمة الذكاء الاصطناعي','authentication_http_401':'رفض المصادقة (HTTP 401)','authentication_http_403':'صلاحية مرفوضة (HTTP 403)','rate_limit_http_429':'تجاوز حد الطلبات (HTTP 429)','provider_http_503':'خدمة Gemini غير متاحة (HTTP 503)','missing_company':'بيانات الشركة غير موجودة','invalid_pair':'يجب اختيار شركتين مختلفتين','simulated_timeout':'محاكاة مهلة؛ لم يُرسل طلب إلى Gemini','simulated_delay':'محاكاة تأخير؛ لم يُرسل طلب إلى Gemini'}.get(e.error_code, e.error_code or '—') }}</td>
         <td>{{ 'تم تسجيل الحدث لمتابعة أداء النظام.' if e.details else '—' }}</td>
       </tr>
     {% endfor %}
@@ -66,7 +85,7 @@ const types = {{ metrics.by_type | tojson }};
 new Chart(document.getElementById('typeChart'), {
   type: 'bar',
   data: {
-    labels: types.map(t => ({analysis:'تحليل شركات',ai_analysis:'تحليل الشركات',analysis_failed:'تعذّر التحليل',ai_timeout:'انتهاء مهلة الذكاء الاصطناعي',missing_company:'بيانات شركة ناقصة',delayed_analysis:'تحليل متأخر',validation_failure:'تعذّر التحقق من البيانات'}[t.type] || 'حدث آخر')),
+    labels: types.map(t => ({analysis:'تحليل شركات',ai_analysis:'تحليل الشركات',ai_demo:'شرح تجريبي',gemini_api_request:'طلب Gemini حقيقي',fault_simulation:'محاكاة عطل',analysis_failed:'تعذّر التحليل',ai_timeout:'انتهاء مهلة الذكاء الاصطناعي',missing_company:'بيانات شركة ناقصة',delayed_analysis:'تحليل متأخر',validation_failure:'تعذّر التحقق من البيانات'}[t.type] || 'حدث آخر')),
     datasets: [{ label: 'عدد', data: types.map(t => t.count), backgroundColor: '#1b4f8a' }]
   },
   options: { plugins: { legend: { display: false } } }

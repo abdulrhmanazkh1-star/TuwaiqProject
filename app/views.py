@@ -26,7 +26,7 @@ from app.models import (
     Recommendation,
     db,
 )
-from app.monitoring import dashboard_metrics, record_event
+from app.monitoring import dashboard_metrics, gemini_api_metrics, record_event
 from app.scoring import SCORING_VERSION, analyze_pair, rank_candidates
 
 bp = Blueprint("main", __name__)
@@ -157,7 +157,8 @@ def removed_investment_analysis():
 @roles_required("admin")
 def system_monitor():
     metrics = dashboard_metrics()
-    return render_template("system.html", metrics=metrics)
+    gemini = gemini_api_metrics()
+    return render_template("system.html", metrics=metrics, gemini=gemini)
 
 
 @bp.route("/system/simulate", methods=["POST"])
@@ -170,13 +171,13 @@ def simulate():
         flash("تم محاكاة انتهاء مهلة واجهة الذكاء الاصطناعي.", "ok")
         return redirect(url_for("main.system_monitor"))
     if kind == "missing_company":
-        record_event("validation_failure", False, error_code="missing_company", details="simulated")
+        record_event("fault_simulation", False, error_code="simulated_missing_company", details="Missing company simulation; no provider request")
         flash("سُجّل فشل تحقق: شركة ناقصة.", "ok")
         return redirect(url_for("main.system_monitor"))
     if kind == "delayed_analysis":
         t0 = time.time()
         time.sleep(1.2)
-        record_event("ai_analysis", True, latency_ms=int((time.time() - t0) * 1000), details="simulated delay")
+        record_event("fault_simulation", True, latency_ms=int((time.time() - t0) * 1000), error_code="simulated_delay", details="Delayed analysis simulation; no provider request")
         flash("سُجّل تحليل متأخر لأغراض المراقبة.", "ok")
         return redirect(url_for("main.system_monitor"))
     return redirect(url_for("main.system_monitor"))
@@ -248,10 +249,10 @@ def _run_comparison(a_id, b_id, analysis_type, simulate=None):
             "ai_analysis",
             True,
             latency_ms=latency,
-            tokens_in=tok_in,
-            tokens_out=tok_out,
             details=f"analysis_id={analysis.id};mode={mode}",
         )
+        if mode == "demo_rules":
+            record_event("ai_demo", True, latency_ms=latency, details="deterministic demo narrative; no Gemini request")
         return redirect(url_for("main.analysis_detail", analysis_id=analysis.id))
     except Exception as exc:
         db.session.rollback()
@@ -277,7 +278,7 @@ def _run_comparison(a_id, b_id, analysis_type, simulate=None):
             scoring_version=SCORING_VERSION,
             mode="error",
             latency_ms=latency,
-            error_message=str(exc)[:500],
+            error_message=user_error,
             report_json="{}",
         )
         try:
@@ -285,7 +286,9 @@ def _run_comparison(a_id, b_id, analysis_type, simulate=None):
             db.session.commit()
         except SQLAlchemyError:
             db.session.rollback()
-        record_event("ai_analysis", False, latency_ms=latency, error_code=error_code, details=str(exc)[:400])
+        if simulate == "timeout":
+            record_event("fault_simulation", False, latency_ms=latency, error_code="simulated_timeout", details="AI timeout simulation; no provider request")
+        record_event("ai_analysis", False, latency_ms=latency, error_code=error_code, details="Analysis failed; see Gemini request events for provider diagnostics.")
         flash(user_error, "err")
         return redirect(url_for("main.compare"))
 
@@ -307,7 +310,7 @@ def _run_discovery(a_id, analysis_type):
         analysis_type=analysis_type,
         status="completed",
         scoring_version=SCORING_VERSION,
-        mode="demo_rules" if not llm_configured() else "hybrid",
+        mode="deterministic",
         latency_ms=latency,
         report_json=json.dumps({"discovery": True, "count_ranked": len(ranked)}, ensure_ascii=False),
     )

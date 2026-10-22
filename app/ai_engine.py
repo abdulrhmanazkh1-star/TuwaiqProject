@@ -18,7 +18,7 @@ def analyze_with_ai(company_a, company_b, analysis_type: str, score_payload: dic
     if simulate_timeout:
         raise TimeoutError("Simulated AI API timeout")
     if not llm_configured():
-        return _demo_narrative(company_a, company_b, analysis_type, score_payload), "demo_rules", 0, 0
+        return _demo_narrative(company_a, company_b, analysis_type, score_payload), "demo_rules", None, None
     system = (
         "You are a Saudi business-partnership analyst. Use ONLY supplied facts. "
         "Never invent financial numbers. Distinguish facts from interpretation. "
@@ -48,11 +48,20 @@ def analyze_with_ai(company_a, company_b, analysis_type: str, score_payload: dic
         ],
         "response_format": {"type": "json_object"},
     }
-    body = _post_chat_completion(payload)
-    content = body["choices"][0]["message"]["content"]
+    body, provider_latency_ms = _post_chat_completion(payload)
+    try:
+        content = body["choices"][0]["message"]["content"]
+        parsed = _validate_narrative(_parse_json(content))
+    except (KeyError, IndexError, TypeError, ValueError) as exc:
+        from app.monitoring import record_event
+        record_event("gemini_api_request", False, latency_ms=provider_latency_ms, error_code="invalid_response_http_200", details=f"model={current_app.config['LLM_MODEL']};http_status=200;invalid structured response")
+        raise ValueError("Gemini returned an invalid structured response") from exc
     usage = body.get("usage") or {}
-    parsed = _parse_json(content)
-    return parsed, "llm", int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
+    in_tokens = _safe_token_count(usage.get("prompt_tokens"))
+    out_tokens = _safe_token_count(usage.get("completion_tokens"))
+    from app.monitoring import record_event
+    record_event("gemini_api_request", True, latency_ms=provider_latency_ms, tokens_in=in_tokens, tokens_out=out_tokens, details=f"model={current_app.config['LLM_MODEL']};http_status=200")
+    return parsed, "llm", in_tokens, out_tokens
 
 
 def _post_chat_completion(payload):
@@ -65,7 +74,9 @@ def _post_chat_completion(payload):
     attempts = max(1, int(current_app.config.get("LLM_RETRY_ATTEMPTS", 3)))
     retryable_statuses = {408, 429, 500, 502, 503, 504}
 
+    from app.monitoring import record_event
     for attempt in range(attempts):
+        started = time.monotonic()
         try:
             response = requests.post(
                 url,
@@ -73,13 +84,24 @@ def _post_chat_completion(payload):
                 json=payload,
                 timeout=current_app.config.get("LLM_TIMEOUT_SECONDS", 25),
             )
-        except (requests.Timeout, requests.ConnectionError):
+        except requests.Timeout:
+            record_event("gemini_api_request", False, latency_ms=int((time.monotonic()-started)*1000), error_code="timeout", details=f"model={current_app.config['LLM_MODEL']}")
+            if attempt + 1 >= attempts:
+                raise
+            time.sleep(min(2**attempt, 8))
+            continue
+        except requests.ConnectionError:
+            record_event("gemini_api_request", False, latency_ms=int((time.monotonic()-started)*1000), error_code="connection_error", details=f"model={current_app.config['LLM_MODEL']}")
             if attempt + 1 >= attempts:
                 raise
             time.sleep(min(2**attempt + random.uniform(0, 0.25), 8))
             continue
+        except requests.RequestException:
+            record_event("gemini_api_request", False, latency_ms=int((time.monotonic()-started)*1000), error_code="request_error", details=f"model={current_app.config['LLM_MODEL']}")
+            raise
 
         if response.status_code in retryable_statuses and attempt + 1 < attempts:
+            record_event("gemini_api_request", False, latency_ms=int((time.monotonic()-started)*1000), error_code=_http_error_code(response.status_code), details=f"model={current_app.config['LLM_MODEL']};http_status={response.status_code}")
             retry_after = response.headers.get("Retry-After")
             try:
                 delay = min(max(float(retry_after), 0), 8) if retry_after else 2**attempt
@@ -88,10 +110,39 @@ def _post_chat_completion(payload):
             time.sleep(delay + random.uniform(0, 0.25))
             continue
 
-        response.raise_for_status()
-        return response.json()
+        if response.status_code >= 400:
+            record_event("gemini_api_request", False, latency_ms=int((time.monotonic()-started)*1000), error_code=_http_error_code(response.status_code), details=f"model={current_app.config['LLM_MODEL']};http_status={response.status_code}")
+            response.raise_for_status()
+        try:
+            body = response.json()
+        except (ValueError, requests.JSONDecodeError) as exc:
+            record_event("gemini_api_request", False, latency_ms=int((time.monotonic()-started)*1000), error_code=f"invalid_json_http_{response.status_code}", details=f"model={current_app.config['LLM_MODEL']};http_status={response.status_code}")
+            raise ValueError("Gemini returned invalid JSON") from exc
+        return body, int((time.monotonic()-started)*1000)
 
     raise RuntimeError("تعذر إكمال طلب Gemini بعد محاولات الإعادة")
+
+
+def _http_error_code(status):
+    group = "authentication" if status in (401, 403) else "rate_limit" if status == 429 else "provider"
+    return f"{group}_http_{status}"
+
+
+def _safe_token_count(value):
+    try:
+        number = int(value)
+        return number if number >= 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _validate_narrative(value):
+    required = {"opportunities": list, "risks": list, "collaborations": list, "evidence_summary": str, "caveats": list}
+    if not isinstance(value, dict) or any(not isinstance(value.get(k), t) for k, t in required.items()):
+        raise ValueError("Structured response schema mismatch")
+    if any(not isinstance(item, str) for key in ("opportunities", "risks", "collaborations", "caveats") for item in value[key]):
+        raise ValueError("Structured response values must be text")
+    return value
 
 
 def _company_fact_card(company):
