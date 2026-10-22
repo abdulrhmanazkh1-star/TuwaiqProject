@@ -110,9 +110,8 @@ def inject_globals():
 @bp.route("/")
 def home():
     companies = Company.query.order_by(Company.sector, Company.official_name).all()
-    rels = BusinessRelationship.query.order_by(BusinessRelationship.created_at.desc()).all()
     metrics = dashboard_metrics()
-    return render_template("home.html", companies=companies, relationships=rels, metrics=metrics)
+    return render_template("home.html", companies=companies, metrics=metrics)
 
 
 @bp.route("/compare", methods=["GET", "POST"])
@@ -154,7 +153,7 @@ def discover():
 
 @bp.route("/investment", methods=["GET", "POST"])
 def removed_investment_analysis():
-    flash("أُزيل تحليل الاستثمار. يمكنك متابعة الشراكات والاستثمارات المعتمدة من صفحة مراقبة الشراكات.", "ok")
+    flash("تحليل الاستثمار غير متاح حالياً. يمكنك مقارنة الشركات أو استكشاف فرص التعاون.", "ok")
     return redirect(url_for("main.compare"))
 
 
@@ -401,7 +400,19 @@ def _run_comparison(a_id, b_id, analysis_type, simulate=None):
     except Exception as exc:
         db.session.rollback()
         latency = int((time.time() - t0) * 1000)
-        error_code = "timeout" if isinstance(exc, TimeoutError) or "timeout" in str(exc).lower() else "ai_error"
+        response_status = getattr(getattr(exc, "response", None), "status_code", None)
+        if response_status in (429, 503):
+            error_code = f"gemini_{response_status}"
+            user_error = "خدمة Gemini مشغولة أو غير متاحة مؤقتاً. انتظر قليلًا ثم أعد التحليل."
+        elif response_status in (401, 403):
+            error_code = "gemini_auth"
+            user_error = "تعذر التحقق من مفتاح Gemini. راجع المفتاح وإعدادات الخدمة."
+        elif isinstance(exc, TimeoutError) or "timeout" in str(exc).lower():
+            error_code = "timeout"
+            user_error = "استغرق الاتصال بخدمة الذكاء الاصطناعي وقتاً طويلاً. أعد المحاولة بعد قليل."
+        else:
+            error_code = "ai_error"
+            user_error = "تعذر إكمال التحليل بسبب مشكلة مؤقتة في خدمة الذكاء الاصطناعي. أعد المحاولة بعد قليل."
         failed = Analysis(
             company_a_id=int(a_id) if a_id else 1,
             company_b_id=int(b_id) if b_id else None,
@@ -419,7 +430,7 @@ def _run_comparison(a_id, b_id, analysis_type, simulate=None):
         except SQLAlchemyError:
             db.session.rollback()
         record_event("ai_analysis", False, latency_ms=latency, error_code=error_code, details=str(exc)[:400])
-        flash(f"فشل التحليل: {exc}", "err")
+        flash(user_error, "err")
         return redirect(url_for("main.compare"))
 
 

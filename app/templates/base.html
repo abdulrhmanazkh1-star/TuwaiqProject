@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}توافق{% endblock %}</title>
+  <title>{% block title %}مِشراك{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -16,7 +16,7 @@
         <svg viewBox="0 0 48 48" focusable="false"><path d="M9 26.5 19.5 16l7 7L39 10.5"/><path d="M29.5 10.5H39V20"/><circle cx="11" cy="36" r="4"/><circle cx="24" cy="36" r="4"/><circle cx="37" cy="36" r="4"/></svg>
       </div>
       <div>
-        <h1>توافق | ذكاء الشراكات</h1>
+        <h1>مِشراك | ذكاء الشراكات</h1>
         <p>تحليل فرص التعاون والاستثمار بين الشركات السعودية</p>
       </div>
     </div>
@@ -24,7 +24,6 @@
       <a href="{{ url_for('main.home') }}">الرئيسية</a>
       <a href="{{ url_for('main.compare') }}">مقارنة الشركات</a>
       <a href="{{ url_for('main.discover') }}">الاكتشاف الذكي</a>
-      <a href="{{ url_for('main.partnerships') }}">مراقبة الشراكات</a>
       <a href="{{ url_for('main.system_monitor') }}">مراقبة النظام</a>
       <a href="{{ url_for('main.reports') }}">التقارير</a>
     </nav>
@@ -40,6 +39,6 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
-  <div class="footer">توافق — أداة مساندة لتحليل فرص التعاون بين الشركات، ولا تُعدّ توصية استثمارية.</div>
+  <div class="footer">مِشراك — أداة مساندة لتحليل فرص التعاون بين الشركات، ولا تُعدّ توصية استثمارية.</div>
 </body>
 </html>

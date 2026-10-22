@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}الرئيسية — توافق{% endblock %}
+{% block title %}الرئيسية — مِشراك{% endblock %}
 {% block content %}
 <section class="hero">
-  <div class="hero-brand"><span class="hero-symbol" aria-hidden="true">⇄</span><div><span class="demo-tag">مشروع أكاديمي</span><h2>توافق</h2></div></div>
-  <h2>اكتشف فرص التعاون والاستثمار، وتابع أثرها بعد اعتمادها.</h2>
-  <p class="muted">منصة تساعدك على مقارنة الشركات السعودية، وفهم فرص الشراكة ومخاطرها، ومتابعة النتائج بمؤشرات واضحة.</p>
+  <div class="hero-brand"><span class="hero-symbol" aria-hidden="true">⇄</span><div><span class="demo-tag">مشروع أكاديمي</span><h2>مِشراك</h2></div></div>
+  <h2>اكتشف فرص التعاون بين الشركات السعودية.</h2>
+  <p class="muted">منصة تساعدك على مقارنة الشركات وفهم فرص الشراكة ومخاطرها من خلال تحليل واضح.</p>
   <p class="muted">السجل يحتوي {{ companies|length }} شركة مساهمة مدرجة في السوق الرئيسية، مع أسماء ورموز مرجعية من دليل تداول السعودية. أوصاف الأنشطة مختصرة، والبيانات المالية غير مستوردة.</p>
 </section>
 <div class="grid grid-3">
@@ -18,11 +18,11 @@
     <ol>
       <li>اكتشاف شريك استراتيجي من شركات الاتصالات والطاقة والبتروكيماويات والمصارف المدرجة.</li>
       <li>فتح مقارنة تفصيلية ومراجعة الفرص والمخاطر.</li>
-      <li>مراقبة شراكة موقّعة مُحاكاة وإيراد 650 ألف مقابل هدف مليون.</li>
-      <li>لوحة مراقبة النظام ومحاكاة انتهاء مهلة API.</li>
+      <li>مراجعة التقارير المحفوظة ونتائج المقارنات.</li>
+      <li>لوحة مراقبة النظام ومحاكاة تعثر خدمة الذكاء الاصطناعي.</li>
     </ol>
     <a class="btn" href="{{ url_for('main.discover') }}">ابدأ الاكتشاف</a>
-    <a class="btn secondary" href="{{ url_for('main.partnerships') }}">مراقبة الشراكات</a>
+    <a class="btn secondary" href="{{ url_for('main.compare') }}">قارن شركتين</a>
   </div>
   <div class="card">
     <h3>حدود المنتج</h3>

@@ -14,7 +14,7 @@ class Config:
     LLM_BASE_URL = os.getenv(
         "LLM_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai"
     ).rstrip("/")
-    LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.8-flash")
+    LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.5-flash-lite")
     LLM_INPUT_COST_PER_1M = float(os.getenv("LLM_INPUT_COST_PER_1M", "0.15"))
     LLM_OUTPUT_COST_PER_1M = float(os.getenv("LLM_OUTPUT_COST_PER_1M", "0.60"))
     SCORING_VERSION = "cm-score-v1"

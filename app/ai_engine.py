@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import random
 import re
+import time
 from flask import current_app
 import requests
 
@@ -46,19 +48,7 @@ def analyze_with_ai(company_a, company_b, analysis_type: str, score_payload: dic
         ],
         "response_format": {"type": "json_object"},
     }
-    headers = {
-        "Authorization": f"Bearer {current_app.config['LLM_API_KEY']}",
-        "Content-Type": "application/json",
-    }
-    timeout = current_app.config.get("LLM_TIMEOUT_SECONDS", 25)
-    resp = requests.post(
-        f"{current_app.config['LLM_BASE_URL']}/chat/completions",
-        headers=headers,
-        json=payload,
-        timeout=timeout,
-    )
-    resp.raise_for_status()
-    body = resp.json()
+    body = _post_chat_completion(payload)
     content = body["choices"][0]["message"]["content"]
     usage = body.get("usage") or {}
     parsed = _parse_json(content)
@@ -101,21 +91,49 @@ def summarize_relationship(relationship, kpi_rows, milestones, alerts, simulate_
         ],
         "response_format": {"type": "json_object"},
     }
+    body = _post_chat_completion(payload)
+    content = body["choices"][0]["message"]["content"]
+    usage = body.get("usage") or {}
+    return _parse_json(content), "llm", int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
+
+
+def _post_chat_completion(payload):
+    """Retry transient Gemini/API failures with bounded exponential backoff."""
     headers = {
         "Authorization": f"Bearer {current_app.config['LLM_API_KEY']}",
         "Content-Type": "application/json",
     }
-    resp = requests.post(
-        f"{current_app.config['LLM_BASE_URL']}/chat/completions",
-        headers=headers,
-        json=payload,
-        timeout=current_app.config.get("LLM_TIMEOUT_SECONDS", 25),
-    )
-    resp.raise_for_status()
-    body = resp.json()
-    content = body["choices"][0]["message"]["content"]
-    usage = body.get("usage") or {}
-    return _parse_json(content), "llm", int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
+    url = f"{current_app.config['LLM_BASE_URL']}/chat/completions"
+    attempts = max(1, int(current_app.config.get("LLM_RETRY_ATTEMPTS", 3)))
+    retryable_statuses = {408, 429, 500, 502, 503, 504}
+
+    for attempt in range(attempts):
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=current_app.config.get("LLM_TIMEOUT_SECONDS", 25),
+            )
+        except (requests.Timeout, requests.ConnectionError):
+            if attempt + 1 >= attempts:
+                raise
+            time.sleep(min(2**attempt + random.uniform(0, 0.25), 8))
+            continue
+
+        if response.status_code in retryable_statuses and attempt + 1 < attempts:
+            retry_after = response.headers.get("Retry-After")
+            try:
+                delay = min(max(float(retry_after), 0), 8) if retry_after else 2**attempt
+            except (TypeError, ValueError):
+                delay = 2**attempt
+            time.sleep(delay + random.uniform(0, 0.25))
+            continue
+
+        response.raise_for_status()
+        return response.json()
+
+    raise RuntimeError("تعذر إكمال طلب Gemini بعد محاولات الإعادة")
 
 
 def _company_fact_card(company):

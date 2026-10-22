@@ -133,7 +133,9 @@ th { color: var(--muted); font-weight: 600; }
 .score-low { color: #c0392b !important; background: #fdecea; }
 .score-badge { display: inline-block; min-width: 48px; padding: 4px 10px; border-radius: 999px; font-weight: 800; text-align: center; background: #f0f2f5; }
 .metric-label { display: flex; align-items: center; gap: 8px; }
-.metric-icon { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: #e8eef7; font-size: 1.05rem; }
+.icon-library { position: absolute; width: 0; height: 0; overflow: hidden; }
+.metric-icon { display: inline-grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; border: 1px solid #d8e1ed; border-radius: 8px; background: #f2f6fb; color: #193b66; }
+.metric-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .footer {
   text-align: center; color: var(--muted); font-size: 0.8rem; padding: 24px;
 }

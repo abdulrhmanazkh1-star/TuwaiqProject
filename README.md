@@ -1,4 +1,4 @@
-# CompatibilityMatch AI
+# مِشراك — ذكاء الشراكات
 
 مشروع **Project 1 — AI Product Development and Monitoring**. يساعد فرق الاستراتيجية على مقارنة فرص الشراكات والاستثمار بين شركات مدرجة في السوق الرئيسية السعودية، ثم متابعة مؤشرات العلاقة بعد اعتمادها.
 
@@ -26,7 +26,7 @@ python run.py
 
 ## متغيرات البيئة
 
-لربط Gemini، أنشئ مفتاحاً من [Google AI Studio](https://aistudio.google.com/apikey)، ثم انسخ `.env.example` إلى `.env` وضع المفتاح في `GEMINI_API_KEY`. يستخدم التطبيق افتراضياً `gemini-3.8-flash` عبر واجهة Gemini المتوافقة مع OpenAI. أعد تشغيل التطبيق بعد حفظ المفتاح. ملف `.env` مستثنى من Git؛ لا ترفع المفتاح إلى GitHub. عند ترك المفتاح فارغاً يعمل التطبيق بوضع تجريبي بقواعد ثابتة، ولا يرسل طلبات إلى Gemini.
+لربط Gemini، أنشئ مفتاحاً من [Google AI Studio](https://aistudio.google.com/apikey)، ثم انسخ `.env.example` إلى `.env` وضع المفتاح في `GEMINI_API_KEY`. يستخدم التطبيق افتراضياً `gemini-3.5-flash-lite` عبر واجهة Gemini المتوافقة مع OpenAI. أعد تشغيل التطبيق بعد حفظ المفتاح. ملف `.env` مستثنى من Git؛ لا ترفع المفتاح إلى GitHub. عند ترك المفتاح فارغاً يعمل التطبيق بوضع تجريبي بقواعد ثابتة، ولا يرسل طلبات إلى Gemini.
 
 ## خطوات العرض
 

@@ -1,7 +1,7 @@
-# Project 1 report — CompatibilityMatch AI
+# Project 1 report — مِشراك (CompatibilityMatch AI)
 
 **Course:** AI Product Development and Monitoring  
-**Product:** CompatibilityMatch AI — Saudi Business Partnership & Investment Intelligence  
+**Product:** مِشراك — Saudi Business Partnership & Investment Intelligence
 **Date:** 21 October 2026
 
 ## 1. Problem and users

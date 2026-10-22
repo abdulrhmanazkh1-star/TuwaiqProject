@@ -41,17 +41,6 @@
     <p><b>ملخص الدليل:</b> {{ n.evidence_summary }}</p>
     <p><b>قيود:</b></p>
     <ul>{% for x in (report.scores.limitations if report.scores else []) %}<li>{{ x }}</li>{% endfor %}</ul>
-    {% if analysis.company_a and analysis.company_b %}
-    <form method="post" action="{{ url_for('main.create_partnership') }}" class="stack">
-      <input type="hidden" name="company_a" value="{{ analysis.company_a_id }}">
-      <input type="hidden" name="company_b" value="{{ analysis.company_b_id }}">
-      <input type="hidden" name="relationship_type" value="{{ analysis.analysis_type }}">
-      <input type="hidden" name="start_date" value="2026-01-01">
-      <input type="hidden" name="status" value="draft">
-      <label>اسم العلاقة <input name="name" value="علاقة من التحليل {{ analysis.id }}"></label>
-      <button class="btn secondary" type="submit">إنشاء سجل مراقبة لهذه العلاقة</button>
-    </form>
-    {% endif %}
   </div>
 </div>
 {% endblock %}
