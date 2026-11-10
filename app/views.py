@@ -103,13 +103,30 @@ def inject_globals():
     }
 
 
-@bp.route("/")
+@bp.route("/workspace")
 def home():
     companies = Company.query.order_by(Company.sector, Company.official_name).all()
     metrics = dashboard_metrics() if g.logged_in_user.role == "admin" else None
     recent_analyses = Analysis.query.filter(Analysis.analysis_type.in_(("partnership", "joint_venture"))).order_by(Analysis.created_at.desc()).limit(5).all()
     sector_count = db.session.query(Company.sector).distinct().count()
     return render_template("home.html", companies=companies, metrics=metrics, recent_analyses=recent_analyses, sector_count=sector_count)
+
+
+@bp.route("/")
+def portfolio():
+	return render_template("experience_chooser.html")
+
+
+@bp.route("/experience/a")
+def experience_a():
+    """Public first-draft portfolio, representing the initial weak-prompt version."""
+    return render_template("experience_a.html")
+
+
+@bp.route("/experience/b")
+def experience_b():
+    """Public refined portfolio, representing the polished strong-prompt version."""
+    return render_template("portfolio.html")
 
 
 @bp.route("/compare", methods=["GET", "POST"])

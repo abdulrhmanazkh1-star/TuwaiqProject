@@ -17,7 +17,7 @@ def forbidden(_error):
 @auth_bp.before_app_request
 def load_and_require_user():
     endpoint = request.endpoint or ""
-    if endpoint.startswith("static") or endpoint in {"auth.login", "auth.login_user", "auth.login_admin", "auth.register", "auth.register_admin"}:
+    if endpoint.startswith("static") or endpoint in {"main.portfolio", "main.experience_a", "main.experience_b", "auth.login", "auth.login_user", "auth.login_admin", "auth.register", "auth.register_admin"}:
         g.logged_in_user = None
         return
     user_id = session.get("user_id")

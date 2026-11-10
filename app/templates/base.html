@@ -20,6 +20,7 @@
     <nav class="nav">
       {% if logged_in_user %}
       <a href="{{ url_for('main.home') }}" class="{{ 'active' if request.endpoint == 'main.home' else '' }}" {% if request.endpoint == 'main.home' %}aria-current="page"{% endif %}>الرئيسية</a>
+      <a href="{{ url_for('studio.studio') }}" class="{{ 'active' if request.endpoint.startswith('studio.') else '' }}" {% if request.endpoint.startswith('studio.') %}aria-current="page"{% endif %}>Portfolio Studio</a>
       <a href="{{ url_for('main.compare') }}" class="{{ 'active' if request.endpoint == 'main.compare' else '' }}" {% if request.endpoint == 'main.compare' %}aria-current="page"{% endif %}>مقارنة الشركات</a>
       <a href="{{ url_for('main.discover') }}" class="{{ 'active' if request.endpoint in ('main.discover', 'main._run_discovery') else '' }}" {% if request.endpoint == 'main.discover' %}aria-current="page"{% endif %}>الاكتشاف الذكي</a>
       {% if logged_in_user.role == 'admin' %}

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbfaf7">
+  <meta name="description" content="اختر النسخة الأولى أو النسخة المطوّرة من ملف عبدالرحمن فهد البكر المهني.">
+  <title>اختر تجربتك | عبدالرحمن فهد البكر</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/experience-chooser.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="identity" href="/" aria-label="Abdulrahman Albakr home"><span class="identity-mark">AA</span><span>ABDULRAHMAN ALBAKR<small>AI · DATA · PORTFOLIO</small></span></a>
+    <button class="language-toggle" id="languageToggle" type="button" aria-label="التبديل إلى الإنجليزية" aria-pressed="false">English <span>↗</span></button>
+  </header>
+  <main>
+    <section class="chooser">
+      <div class="choices">
+        <a class="choice choice-a" href="{{ url_for('main.experience_a') }}" aria-label="Open experience A">
+          <span class="choice-top"><span class="choice-letter">A</span><span class="choice-index" data-en="FIRST VERSION" data-ar="النسخة الأولى">النسخة الأولى</span></span>
+          <span class="choice-art art-a" aria-hidden="true"><span class="orbit orbit-left"></span><span class="mini-card"><i></i><i></i><i></i><b>AI</b></span><span class="art-caption">A / STARTING POINT</span></span>
+          <span class="choice-copy"><strong data-en="The Starting Point" data-ar="نقطة البداية">نقطة البداية</strong><span data-en="A first portfolio draft built from a simple prompt." data-ar="مسودة أولى للملف المهني، بُنيت انطلاقاً من توجيه بسيط.">مسودة أولى للملف المهني، بُنيت انطلاقاً من توجيه بسيط.</span></span>
+          <span class="choice-action"><span data-en="Open version A" data-ar="افتح النسخة A">افتح النسخة A</span><span aria-hidden="true">↗</span></span>
+        </a>
+        <a class="choice choice-b" href="{{ url_for('main.experience_b') }}" aria-label="Open experience B">
+          <span class="choice-top"><span class="choice-letter">B</span><span class="choice-index" data-en="REFINED VERSION" data-ar="النسخة المطوّرة">النسخة المطوّرة</span></span>
+          <span class="choice-art art-b" aria-hidden="true"><span class="network-lines"></span><span class="mini-card"><i></i><i></i><i></i><b>DATA</b></span><span class="art-caption">B / REFINED PORTFOLIO</span></span>
+          <span class="choice-copy"><strong data-en="The Refined Experience" data-ar="التجربة المطوّرة">التجربة المطوّرة</strong><span data-en="A polished, bilingual portfolio with my education, projects, skills, and training." data-ar="ملف مهني متكامل باللغتين، يعرض تعليمي ومشاريعي ومهاراتي وتدريبي.">ملف مهني متكامل باللغتين، يعرض تعليمي ومشاريعي ومهاراتي وتدريبي.</span></span>
+          <span class="choice-action"><span data-en="Open version B" data-ar="افتح النسخة B">افتح النسخة B</span><span aria-hidden="true">↗</span></span>
+        </a>
+      </div>
+    </section>
+  </main>
+  <footer class="footer"><span>ABDULRAHMAN FAHD ALBAKR</span><span data-en="ARTIFICIAL INTELLIGENCE · UNIVERSITY OF HAIL · 2026" data-ar="الذكاء الاصطناعي · جامعة حائل · ٢٠٢٦">الذكاء الاصطناعي · جامعة حائل · ٢٠٢٦</span></footer>
+  <script>
+    (()=>{const button=document.getElementById('languageToggle');const nodes=[...document.querySelectorAll('[data-en][data-ar]')];let language=localStorage.getItem('portfolio-language')||'ar';localStorage.setItem('portfolio-language',language);function apply(){document.documentElement.lang=language;document.documentElement.dir=language==='ar'?'rtl':'ltr';nodes.forEach(node=>node.textContent=node.dataset[language]);button.innerHTML=language==='ar'?'English <span>↗</span>':'عربي <span>↗</span>';button.setAttribute('aria-label',language==='ar'?'التبديل إلى الإنجليزية':'Switch to Arabic');button.setAttribute('aria-pressed',language==='en')}button.addEventListener('click',()=>{language=language==='ar'?'en':'ar';localStorage.setItem('portfolio-language',language);apply()});apply()})();
+  </script>
+</body>
+</html>

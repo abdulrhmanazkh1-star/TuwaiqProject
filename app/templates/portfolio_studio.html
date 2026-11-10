@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111714">
+  <title>Portfolio Studio | مِشراك</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/portfolio-studio.css') }}">
+</head>
+<body>
+  <header class="studio-header">
+    <a class="studio-brand" href="{{ url_for('main.portfolio') }}"><span class="brand-glyph">P/2</span><span>PORTFOLIO STUDIO<small>مِساحة تطوير المحفظة</small></span></a>
+    <nav aria-label="التنقل الرئيسي"><a href="#compare">المقارنة</a><a href="#version-a">النسخة A</a><a href="#version-b">النسخة B</a></nav>
+    <a class="public-link" href="{{ url_for('main.portfolio') }}" target="_blank" rel="noopener">المحفظة العامة ↗</a>
+  </header>
+  <main class="studio-shell">
+    <section class="studio-hero">
+      <div><span class="eyebrow">PROMPT LAB <i></i> PROJECT 02</span><h1>من أول فكرة<br><em>إلى محفظة جاهزة.</em></h1><p>طوّر نسختين مستقلتين من ملفك المهني. احفظ نصوصك وسجل التغييرات، ثم قارن المعاينات وما طلبته كل تعليمات.</p></div>
+      <aside class="provider-card {{ 'provider-ready' if ai_configured else 'provider-missing' }}"><span class="provider-indicator"></span><div><b>{{ 'تكامل AI مهيأ' if ai_configured else 'توليد AI غير مهيأ' }}</b><p>{{ 'سيُرسل نص التعليمات وبيانات الملف بعد موافقتك عند التوليد.' if ai_configured else 'الحفظ والمعاينة يعملان. لتفعيل التوليد أضف GEMINI_API_KEY إلى إعدادات الخادم.' }} النشر الخارجي غير مرتبط؛ المحفظة العامة متاحة ضمن التطبيق الحالي فقط.</p></div><span class="provider-mark">{{ 'ON' if ai_configured else 'SETUP' }}</span></aside>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="studio-flash {{ category }}" role="status">{{ message }}</div>{% endfor %}{% endwith %}
+
+    <section class="compare-section" id="compare">
+      <div class="section-top"><div><span class="eyebrow">01 / BLIND COMPARISON</span><h2>قارن النسختين</h2></div><p>المحتوى الشخصي ثابت بين النسختين. الجدول يفصل بين ما ذكره نص التعليمات وما تعرضه المعاينة الأساسية؛ لا توجد درجة جودة تلقائية.</p></div>
+      <div class="preview-grid">
+        {% for key in ('A','B') %}{% set w=workspaces[key] %}
+        <article class="preview-card" id="preview-{{ key|lower }}"><div class="preview-head"><div><span class="version-chip version-{{ key|lower }}">VERSION {{ key }}</span><b>{{ 'بداية سريعة' if key == 'A' else 'التوجيه المفصل' }}</b></div><span class="source-label {{ 'source-generated' if w.status == 'generated' else '' }}">{{ 'مسودة نصية مولّدة' if w.status == 'generated' else 'معاينة قالب مشتركة' }}</span></div><iframe title="معاينة المحفظة النسخة {{ key }}" src="{{ url_for('studio.preview', key=key) }}" loading="lazy"></iframe><div class="preview-foot"><span>{{ styles.get(w.style, w.style) }}</span><a href="#version-{{ key|lower }}">تحرير هذه النسخة ↓</a></div></article>
+        {% endfor %}
+      </div>
+      <div class="comparison-table-wrap"><table class="comparison-table"><thead><tr><th>المتطلب</th><th>ما يذكره نص A</th><th>معاينة A</th><th>ما يذكره نص B</th><th>معاينة B</th></tr></thead><tbody>
+        {% for label, _keywords in checks %}{% set idx=loop.index0 %}<tr><th>{{ label }}</th><td><span class="mention {{ 'mentioned' if coverage['A'][idx] else 'not-mentioned' }}">{{ 'مذكور' if coverage['A'][idx] else 'غير مذكور' }}</span></td><td><span class="included">ضمن القالب</span></td><td><span class="mention {{ 'mentioned' if coverage['B'][idx] else 'not-mentioned' }}">{{ 'مذكور' if coverage['B'][idx] else 'غير مذكور' }}</span></td><td><span class="included">ضمن القالب</span></td></tr>{% endfor %}
+        <tr><th>توليد المحتوى عبر AI</th><td colspan="2" class="integration-result">{{ 'تم التوليد' if workspaces['A'].status == 'generated' else 'لم يُولّد؛ معاينة القالب فقط' }}</td><td colspan="2" class="integration-result">{{ 'تم التوليد' if workspaces['B'].status == 'generated' else 'لم يُولّد؛ معاينة القالب فقط' }}</td></tr>
+      </tbody></table></div><p class="comparison-note">تحليل الإشارات في النص آلي وبسيط (مطابقة كلمات)، وليس حكماً على جودة التعليمات أو صحة المحتوى. «ضمن القالب» تعني أن القسم موجود في المعاينة الأساسية، ولا تعني أن الذكاء الاصطناعي ولّده.</p>
+    </section>
+
+    <section class="workspaces-section">
+      <div class="section-top"><div><span class="eyebrow">02 / YOUR WORKSPACES</span><h2>مساحتا العمل</h2></div><p>كل مساحة تحفظ نص التعليمات، النمط، والمسودات السابقة مستقلة عن الأخرى.</p></div>
+      <div class="workspace-grid">
+        {% for key in ('A','B') %}{% set w=workspaces[key] %}
+        <article class="workspace-card" id="version-{{ key|lower }}">
+          <header class="workspace-title"><div><span class="version-chip version-{{ key|lower }}">VERSION {{ key }}</span><h3>{{ 'النسخة الأولى · نقطة البداية' if key == 'A' else 'النسخة الثانية · تطوير البرومبت' }}</h3></div><span class="save-state {{ 'state-generated' if w.status == 'generated' else '' }}">{{ 'مولّدة بـ AI' if w.status == 'generated' else ('خطأ بالتوليد' if w.status == 'error' else ('محفوظة' if w.status == 'saved' else 'مسودة أولية')) }}</span></header>
+          <form method="post" action="{{ url_for('studio.save_prompt', key=key) }}" class="prompt-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label for="prompt-{{ key|lower }}">نص التعليمات الأصلي <span>حتى 10,000 حرف</span></label>
+            <textarea id="prompt-{{ key|lower }}" name="prompt" maxlength="10000" required>{{ w.prompt }}</textarea>
+            <div class="prompt-meta"><span>{{ '{:,}'.format(w.prompt|length) }} حرف</span><label class="style-label" for="style-{{ key|lower }}">نمط المعاينة</label><select id="style-{{ key|lower }}" name="style">{% for value, title in styles.items() %}<option value="{{ value }}" {{ 'selected' if w.style == value else '' }}>{{ title }}</option>{% endfor %}</select></div>
+            <div class="privacy-note">{% if ai_configured %}<label><input type="checkbox" name="external_consent" value="yes"><span>أوافق على إرسال نص التعليمات وبيانات الملف أعلاه إلى مزود AI المُهيأ لإنتاج نص المحفظة.</span></label>{% else %}<span>لن يُرسل النص لأي خدمة. التوليد يتطلب إعداد GEMINI_API_KEY من مسؤول الخادم.</span>{% endif %}</div>
+            <div class="form-actions"><button class="save-button" type="submit">حفظ التعليمات وسجلها</button>{% if ai_configured %}<button class="generate-button" type="submit" formaction="{{ url_for('studio.generate_version', key=key) }}">توليد مسودة AI ↗</button>{% else %}<button class="generate-button" type="button" disabled title="أضف GEMINI_API_KEY لتفعيل التوليد">التوليد غير مهيأ</button>{% endif %}</div>
+          </form>
+          <details class="history-panel"><summary>سجل التعليمات والنتائج <span>{{ history[key]|length }} محفوظ</span></summary><div class="history-list">{% for revision in history[key] %}<article class="history-item"><div><b>{{ {'starter':'نص بداية','saved':'حُفظت التعليمات','generated':'تولدت المسودة','restored':'استعادة','generation_error':'تعذر التوليد'}.get(revision.event_type, revision.event_type) }}</b><time>{{ revision.created_at.strftime('%Y-%m-%d %H:%M') }}</time></div><p>{{ revision.prompt|truncate(190, True, '…') }}</p>{% if revision.id != history[key][0].id %}<form method="post" action="{{ url_for('studio.restore_revision', revision_id=revision.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="restore-button">استعادة هذه النسخة</button></form>{% endif %}</article>{% else %}<p class="empty-history">لا توجد تغييرات محفوظة بعد.</p>{% endfor %}</div></details>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    <footer class="studio-footer"><span>PORTFOLIO STUDIO · MVP</span><span>النصوص والمسودات محفوظة ضمن حسابك في قاعدة بيانات التطبيق.</span><a href="{{ url_for('main.portfolio') }}">العودة إلى المحفظة ↗</a></footer>
+  </main>
+</body>
+</html>

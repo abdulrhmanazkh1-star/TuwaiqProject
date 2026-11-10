@@ -9,6 +9,7 @@ instance/
 .pytest_cache/
 .coverage
 htmlcov/
+dist/
 *.log
 .DS_Store
 Thumbs.db

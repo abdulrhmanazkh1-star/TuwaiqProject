@@ -1,4 +1,5 @@
 from datetime import datetime, date
+from sqlalchemy import UniqueConstraint
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -206,4 +207,30 @@ class AIEvaluationResult(db.Model):
     reviewer = db.Column(db.String(128))
     factual_support_score = db.Column(db.Float)
     notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class PortfolioWorkspace(db.Model):
+    __tablename__ = "portfolio_workspaces"
+    __table_args__ = (UniqueConstraint("user_id", "version_key", name="uq_portfolio_workspace_owner_version"),)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
+    version_key = db.Column(db.String(1), nullable=False)
+    prompt = db.Column(db.Text, nullable=False)
+    style = db.Column(db.String(24), nullable=False, default="minimal")
+    content_json = db.Column(db.Text, nullable=False, default="{}")
+    status = db.Column(db.String(24), nullable=False, default="starter")
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    revisions = db.relationship("PortfolioRevision", backref="workspace", lazy=True, cascade="all, delete-orphan", order_by="desc(PortfolioRevision.created_at)")
+
+
+class PortfolioRevision(db.Model):
+    __tablename__ = "portfolio_revisions"
+    id = db.Column(db.Integer, primary_key=True)
+    workspace_id = db.Column(db.Integer, db.ForeignKey("portfolio_workspaces.id"), nullable=False, index=True)
+    prompt = db.Column(db.Text, nullable=False)
+    style = db.Column(db.String(24), nullable=False)
+    content_json = db.Column(db.Text, nullable=False, default="{}")
+    event_type = db.Column(db.String(24), nullable=False, default="saved")
+    workspace_status = db.Column(db.String(24), nullable=False, default="saved")
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
